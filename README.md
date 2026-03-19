@@ -52,7 +52,7 @@ Proyecto full stack para catálogo profesional de carpintería.
 
 ## Requisitos
 
-- Node.js 20+
+- Node.js 18+
 - MySQL 8+
 
 ## Variables de entorno
