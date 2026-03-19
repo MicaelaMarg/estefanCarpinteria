@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --color-industrial-yellow: #FFC20E;
+  --color-deep-black: #0D0D0D;
+  --color-dark-gray: #1A1A1A;
+  --color-soft-white: #F5F5F5;
+  --color-wood-brown: #8B5E3C;
+}
+
+:root {
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: #0D0D0D;
+  background-color: #F5F5F5;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.section-container {
+  margin-inline: auto;
+  width: min(1200px, 92%);
+}
+
+.title-xl {
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.btn-primary {
+  border-radius: 0.75rem;
+  background-color: #FFC20E;
+  color: #0D0D0D;
+  font-weight: 700;
+  transition: all 0.25s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  background-color: #d8a50a;
+}
+
+.card-soft {
+  border-radius: 1rem;
+  background-color: #ffffff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
