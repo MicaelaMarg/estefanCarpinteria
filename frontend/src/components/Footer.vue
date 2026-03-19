@@ -17,8 +17,8 @@
             </a>
           </li>
           <li>
-            <a class="hover:text-industrial-yellow" href="https://wa.me/5491112345678" target="_blank" rel="noreferrer">
-              WhatsApp: +54 9 11 1234 5678
+            <a class="hover:text-industrial-yellow" href="https://wa.me/5492236955009" target="_blank" rel="noreferrer">
+              WhatsApp: +54 9 223 695 5009
             </a>
           </li>
         </ul>
@@ -27,8 +27,7 @@
       <div>
         <p class="font-semibold">Redes</p>
         <div class="mt-3 flex gap-3 text-sm">
-          <a class="rounded-lg border border-neutral-700 px-3 py-2 hover:border-industrial-yellow hover:text-industrial-yellow" href="https://instagram.com" target="_blank" rel="noreferrer">Instagram</a>
-          <a class="rounded-lg border border-neutral-700 px-3 py-2 hover:border-industrial-yellow hover:text-industrial-yellow" href="https://facebook.com" target="_blank" rel="noreferrer">Facebook</a>
+          <a class="rounded-lg border border-neutral-700 px-3 py-2 hover:border-industrial-yellow hover:text-industrial-yellow" href="https://instagram.com/maderaenveta/" target="_blank" rel="noreferrer">Instagram</a>
         </div>
       </div>
     </div>

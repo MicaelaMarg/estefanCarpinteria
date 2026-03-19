@@ -12,6 +12,6 @@ import WhatsAppButton from './components/WhatsAppButton.vue'
       <RouterView />
     </main>
     <Footer />
-    <WhatsAppButton phone="5491112345678" />
+    <WhatsAppButton phone="5492236955009" />
   </div>
 </template>

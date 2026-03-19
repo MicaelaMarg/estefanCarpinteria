@@ -10,13 +10,13 @@
 
         <div class="mt-7 space-y-3">
           <a
-            href="https://wa.me/5491112345678"
+            href="https://wa.me/5492236955009"
             target="_blank"
             rel="noreferrer"
             class="flex items-center justify-between rounded-xl border border-neutral-200 px-4 py-3 transition hover:border-industrial-yellow"
           >
             <span class="font-semibold">WhatsApp</span>
-            <span class="text-sm text-neutral-500">+54 9 11 1234 5678</span>
+            <span class="text-sm text-neutral-500">+54 9 223 695 5009</span>
           </a>
           <a
             href="mailto:contacto@estefancarpinteria.com"
@@ -26,22 +26,13 @@
             <span class="text-sm text-neutral-500">contacto@estefancarpinteria.com</span>
           </a>
           <a
-            href="https://instagram.com"
+            href="https://instagram.com/maderaenveta/"
             target="_blank"
             rel="noreferrer"
             class="flex items-center justify-between rounded-xl border border-neutral-200 px-4 py-3 transition hover:border-industrial-yellow"
           >
             <span class="font-semibold">Instagram</span>
-            <span class="text-sm text-neutral-500">@estefan.carpinteria</span>
-          </a>
-          <a
-            href="https://facebook.com"
-            target="_blank"
-            rel="noreferrer"
-            class="flex items-center justify-between rounded-xl border border-neutral-200 px-4 py-3 transition hover:border-industrial-yellow"
-          >
-            <span class="font-semibold">Facebook</span>
-            <span class="text-sm text-neutral-500">Estefan Carpintería</span>
+            <span class="text-sm text-neutral-500">@maderaenveta</span>
           </a>
         </div>
       </article>
@@ -58,3 +49,4 @@
     </div>
   </section>
 </template>
+

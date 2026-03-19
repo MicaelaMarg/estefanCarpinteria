@@ -50,8 +50,7 @@ onMounted(() => {
           <p class="mt-2 text-neutral-300">Nuevos proyectos, procesos de taller y lanzamientos exclusivos.</p>
         </div>
         <div class="flex gap-3">
-          <a href="https://instagram.com" target="_blank" rel="noreferrer" class="rounded-lg border border-neutral-700 px-4 py-2 hover:border-industrial-yellow hover:text-industrial-yellow">Instagram</a>
-          <a href="https://facebook.com" target="_blank" rel="noreferrer" class="rounded-lg border border-neutral-700 px-4 py-2 hover:border-industrial-yellow hover:text-industrial-yellow">Facebook</a>
+          <a href="https://instagram.com/maderaenveta/" target="_blank" rel="noreferrer" class="rounded-lg border border-neutral-700 px-4 py-2 hover:border-industrial-yellow hover:text-industrial-yellow">Instagram</a>
         </div>
       </div>
     </section>
