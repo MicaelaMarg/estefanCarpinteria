@@ -169,3 +169,25 @@ Crear **3 servicios** en Railway:
 - `VITE_API_BASE_URL` = `https://<tu-backend>.up.railway.app/api`
 
 La configuración `railway.json` de cada app ya incluye build/start para deploy directo.
+
+### Deploy por CLI (monorepo)
+
+Ejecutar cada servicio desde su carpeta:
+
+```bash
+# Backend
+cd backend
+railway link   # o railway init
+railway up
+
+# Frontend
+cd ../frontend
+railway link   # o railway init
+railway up
+```
+
+En Windows PowerShell, si aparece error de `railway.ps1`, usar:
+
+```bash
+railway.cmd up
+```
