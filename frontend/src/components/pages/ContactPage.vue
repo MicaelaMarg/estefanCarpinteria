@@ -5,7 +5,10 @@
         <p class="text-sm font-semibold uppercase tracking-[0.14em] text-industrial-yellow">Contacto directo</p>
         <h1 class="title-xl mt-2 text-4xl text-deep-black">Hablemos de tu proyecto</h1>
         <p class="mt-3 text-neutral-700">
-          ElegÃ­ el canal que prefieras. Respondemos rÃ¡pidamente para ayudarte a cotizar y diseÃ±ar tu mueble a medida.
+          Elegí el canal que prefieras. Respondemos rápidamente para ayudarte a cotizar y diseñar tu mueble a medida.
+        </p>
+        <p class="mt-2 text-sm text-neutral-600">
+          Ubicación: Habana, Santa Clara del Mar.
         </p>
 
         <div class="mt-7 space-y-3">
@@ -40,7 +43,7 @@
       <article class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
         <iframe
           title="Mapa del taller"
-          src="https://www.google.com/maps?q=Buenos+Aires&output=embed"
+          src="https://www.google.com/maps?q=Habana+Santa+Clara+del+Mar&output=embed"
           class="h-full min-h-[420px] w-full border-0"
           loading="lazy"
           referrerpolicy="no-referrer-when-downgrade"
@@ -49,4 +52,3 @@
     </div>
   </section>
 </template>
-
