@@ -60,12 +60,12 @@ const handleApply = () => {
           v-model="localFilters.category"
           class="rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none ring-industrial-yellow focus:ring-2"
         >
-          <option value="">Todas las categorÃ­as</option>
-          <option value="Mesas">Mesas</option>
-          <option value="Sillas">Sillas</option>
-          <option value="Placares">Placares</option>
-          <option value="Cocinas">Cocinas</option>
-          <option value="A medida">A medida</option>
+          <option value="">Todas las categorías</option>
+          <option value="Tranqueras">Tranqueras</option>
+          <option value="Bajo parrilla">Bajo parrilla</option>
+          <option value="Pergolas">Pergolas</option>
+          <option value="Cesto de basura">Cesto de basura</option>
+          <option value="Barandas">Barandas</option>
         </select>
         <input
           v-model.number="localFilters.minPrice"
@@ -129,3 +129,4 @@ const handleApply = () => {
     </div>
   </section>
 </template>
+
