@@ -1,7 +1,12 @@
 import type { Request, Response } from 'express'
+import type { RowDataPacket } from 'mysql2'
 import { pool } from '../db/pool.js'
 import type { Product } from '../types/api.js'
 import { sendError, sendSuccess } from '../utils/response.js'
+
+interface CountRow extends RowDataPacket {
+  total: number
+}
 
 const parsePositiveNumber = (value: unknown, fallback: number) => {
   const parsed = Number(value)
@@ -44,7 +49,7 @@ export const getProducts = async (req: Request, res: Response) => {
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : ''
 
     const countQuery = `SELECT COUNT(*) AS total FROM products ${whereClause}`
-    const [countRows] = await pool.query<Array<{ total: number }>>(countQuery, params)
+    const [countRows] = await pool.query<CountRow[]>(countQuery, params)
     const total = countRows[0]?.total ?? 0
 
     const productsQuery = `

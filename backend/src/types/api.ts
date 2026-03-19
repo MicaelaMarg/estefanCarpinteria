@@ -1,3 +1,5 @@
+import type { RowDataPacket } from 'mysql2'
+
 export interface ApiResponse<T> {
   status: 'success' | 'error'
   data: T
@@ -5,7 +7,7 @@ export interface ApiResponse<T> {
   message: string
 }
 
-export interface Product {
+export interface Product extends RowDataPacket {
   id: number
   name: string
   description: string
