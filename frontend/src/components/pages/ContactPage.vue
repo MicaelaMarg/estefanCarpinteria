@@ -5,10 +5,10 @@
         <p class="text-sm font-semibold uppercase tracking-[0.14em] text-industrial-yellow">Contacto directo</p>
         <h1 class="title-xl mt-2 text-4xl text-deep-black">Hablemos de tu proyecto</h1>
         <p class="mt-3 text-neutral-700">
-          Elegí el canal que prefieras. Respondemos rápidamente para ayudarte a cotizar y diseñar tu mueble a medida.
+          Elegi el canal que prefieras. Respondemos rapidamente para ayudarte a cotizar y disenar tu mueble a medida.
         </p>
         <p class="mt-2 text-sm text-neutral-600">
-          Ubicación: Habana, Santa Clara del Mar.
+          Ubicacion: Habana, Santa Clara del Mar.
         </p>
 
         <div class="mt-7 space-y-3">
