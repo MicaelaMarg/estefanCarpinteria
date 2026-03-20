@@ -21,7 +21,7 @@ defineProps<{
 
     <div class="section-container absolute inset-0 flex flex-col items-start justify-center text-left">
       <p class="mb-4 rounded-full bg-industrial-yellow px-4 py-2 text-xs font-bold tracking-[0.16em] text-deep-black">
-        CARPINTERÍA PREMIUM
+        CARPINTERIA PREMIUM
       </p>
       <h1 class="title-xl max-w-2xl text-5xl text-soft-white md:text-6xl">
         {{ title }}
@@ -30,7 +30,7 @@ defineProps<{
         {{ subtitle }}
       </p>
       <RouterLink to="/catalogo" class="btn-primary mt-8 inline-flex items-center gap-2 px-6 py-3">
-        Ver catálogo
+        Ver catalogo
       </RouterLink>
     </div>
   </section>

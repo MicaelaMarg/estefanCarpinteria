@@ -17,7 +17,7 @@ onMounted(() => {
   <div>
     <HeroSection
       title="Fabricamos calidad en madera"
-      subtitle="Diseñamos muebles a medida con enfoque artesanal, materiales nobles y terminaciones premium para hogares y espacios comerciales."
+      subtitle="Disenamos muebles a medida con enfoque artesanal, materiales nobles y terminaciones premium para hogares y espacios comerciales."
       media-url="https://images.unsplash.com/photo-1572981779307-38b8cabb2407?auto=format&fit=crop&w=1600&q=80"
     />
 

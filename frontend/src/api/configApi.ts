@@ -19,7 +19,7 @@ configApi.interceptors.request.use((config) => {
 configApi.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message = error.response?.data?.message ?? 'Ocurrió un error inesperado'
+    const message = error.response?.data?.message ?? 'Ocurrio un error inesperado'
     toast.error(message)
     return Promise.reject(error)
   },

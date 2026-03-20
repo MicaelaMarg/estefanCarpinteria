@@ -15,7 +15,7 @@ const handleSubmit = async () => {
     email: form.email,
     password: form.password,
   })
-  toast.success('Sesión iniciada correctamente')
+  toast.success('Sesion iniciada correctamente')
 }
 </script>
 
@@ -23,8 +23,8 @@ const handleSubmit = async () => {
   <section class="section-container py-16">
     <div class="mx-auto max-w-md card-soft p-7">
       <p class="text-sm font-semibold uppercase tracking-[0.14em] text-industrial-yellow">Acceso</p>
-      <h1 class="mt-2 text-3xl font-black text-deep-black">Iniciar sesión</h1>
-      <p class="mt-2 text-sm text-neutral-600">Panel preparado para autenticación JWT.</p>
+      <h1 class="mt-2 text-3xl font-black text-deep-black">Iniciar sesion</h1>
+      <p class="mt-2 text-sm text-neutral-600">Panel preparado para autenticacion JWT.</p>
 
       <form class="mt-6 space-y-4" @submit.prevent="handleSubmit">
         <div>
@@ -39,13 +39,13 @@ const handleSubmit = async () => {
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-semibold text-neutral-700">Contraseña</label>
+          <label class="mb-1 block text-sm font-semibold text-neutral-700">Contrasena</label>
           <input
             v-model="form.password"
             type="password"
             required
             class="w-full rounded-xl border border-neutral-200 px-4 py-3 outline-none ring-industrial-yellow focus:ring-2"
-            placeholder="••••••••"
+            placeholder="********"
           />
         </div>
 

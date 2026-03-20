@@ -44,9 +44,9 @@ const handleApply = () => {
   <section class="section-container py-14">
     <header class="mb-8 flex flex-col gap-6 rounded-2xl bg-white p-5 shadow-sm md:p-6">
       <div>
-        <h2 class="text-3xl font-extrabold text-deep-black">Catálogo de productos</h2>
+        <h2 class="text-3xl font-extrabold text-deep-black">Catalogo de productos</h2>
         <p class="mt-2 text-sm text-neutral-600">
-          Encontrá muebles y piezas a medida con terminaciones de alta calidad.
+          Encontra muebles y piezas a medida con terminaciones de alta calidad.
         </p>
       </div>
       <div class="grid gap-3 md:grid-cols-4">
@@ -60,7 +60,7 @@ const handleApply = () => {
           v-model="localFilters.category"
           class="rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none ring-industrial-yellow focus:ring-2"
         >
-          <option value="">Todas las categor�as</option>
+          <option value="">Todas las categorias</option>
           <option value="Tranqueras">Tranqueras</option>
           <option value="Bajo parrilla">Bajo parrilla</option>
           <option value="Pergolas">Pergolas</option>
@@ -71,14 +71,14 @@ const handleApply = () => {
           v-model.number="localFilters.minPrice"
           type="number"
           min="0"
-          placeholder="Precio mínimo"
+          placeholder="Precio minimo"
           class="rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none ring-industrial-yellow focus:ring-2"
         />
         <input
           v-model.number="localFilters.maxPrice"
           type="number"
           min="0"
-          placeholder="Precio máximo"
+          placeholder="Precio maximo"
           class="rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none ring-industrial-yellow focus:ring-2"
         />
       </div>
@@ -117,7 +117,7 @@ const handleApply = () => {
         Anterior
       </button>
       <span class="rounded-lg bg-deep-black px-4 py-2 text-sm font-semibold text-soft-white">
-        Página {{ page }} de {{ totalPages }}
+        Pagina {{ page }} de {{ totalPages }}
       </span>
       <button
         :disabled="page >= totalPages"
@@ -129,4 +129,3 @@ const handleApply = () => {
     </div>
   </section>
 </template>
-

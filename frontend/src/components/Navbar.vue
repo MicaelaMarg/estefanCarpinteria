@@ -6,7 +6,7 @@ const route = useRoute()
 
 const links = [
   { label: 'Inicio', to: '/' },
-  { label: 'Catálogo', to: '/catalogo' },
+  { label: 'Catalogo', to: '/catalogo' },
   { label: 'Nosotros', to: '/nosotros' },
   { label: 'Contacto', to: '/contacto' },
   { label: 'Login', to: '/login' },
@@ -20,7 +20,7 @@ const isActive = computed(() => (path: string) => route.path === path)
     <div class="section-container flex items-center justify-between py-4">
       <RouterLink to="/" class="flex items-center gap-2 text-industrial-yellow">
         <span class="rounded-md bg-industrial-yellow px-2 py-1 font-black text-deep-black">EC</span>
-        <span class="text-lg font-bold tracking-wide">Estefan Carpintería</span>
+        <span class="text-lg font-bold tracking-wide">Estefan Carpinteria</span>
       </RouterLink>
 
       <nav class="hidden gap-6 md:flex">

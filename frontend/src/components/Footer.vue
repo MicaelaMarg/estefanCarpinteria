@@ -2,7 +2,7 @@
   <footer class="bg-deep-black py-12 text-soft-white">
     <div class="section-container grid gap-8 md:grid-cols-3">
       <div>
-        <p class="text-xl font-bold text-industrial-yellow">Estefan Carpintería</p>
+        <p class="text-xl font-bold text-industrial-yellow">Estefan Carpinteria</p>
         <p class="mt-3 text-sm text-neutral-300">
           Muebles y proyectos a medida con terminaciones premium y estilo industrial moderno.
         </p>
