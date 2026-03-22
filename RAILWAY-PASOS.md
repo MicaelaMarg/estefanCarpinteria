@@ -43,6 +43,23 @@ Ahí ves **tarjetas**: MySQL, backend, frontend, etc.
 
 ---
 
+## Flechas en el mapa: ¿el frontend “no está conectado”?
+
+En el lienzo de Railway **no es normal** que aparezca una flecha del **frontend** hacia el **backend**. Las flechas suelen mostrarse cuando un servicio **referencia variables** de otro (por ejemplo el API → **MySQL**).
+
+El sitio y el API se comunican por **HTTPS desde el navegador**, no por una “línea” en el dibujo. Lo que tiene que estar bien es:
+
+| Dónde | Variable | Valor |
+|--------|-----------|--------|
+| **Frontend** | `VITE_API_BASE_URL` | `https://URL-DEL-BACKEND.up.railway.app/api` |
+| **Backend** | `CORS_ORIGIN` | `https://URL-DEL-FRONTEND.up.railway.app` (exacta, con `https`) |
+
+Después de cambiar `VITE_API_BASE_URL`: **Redeploy del frontend** (Vite la incluye en el build).
+
+**Cómo comprobar:** abrí el sitio público; si el catálogo carga productos y el login del admin responde, **sí están conectados**.
+
+---
+
 ## 4. Variables de entorno (backend)
 
 En el servicio **backend** → **Variables** (o *Variables / Environment*):
