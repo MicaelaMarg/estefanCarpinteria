@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS products (
   description TEXT NOT NULL,
   price DECIMAL(12,2) NOT NULL,
   category VARCHAR(80) NOT NULL,
-  image_url VARCHAR(500) NOT NULL,
-  video_url VARCHAR(500) NULL,
+  image_url VARCHAR(2048) NOT NULL,
+  video_url VARCHAR(2048) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

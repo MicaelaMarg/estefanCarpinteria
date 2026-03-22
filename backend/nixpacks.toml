@@ -1,0 +1,3 @@
+# Caché de npm fuera de node_modules (evita EBUSY con cache mounts de BuildKit/Nixpacks)
+[variables]
+NPM_CONFIG_CACHE = "/tmp/npm-cache"

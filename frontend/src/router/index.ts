@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AboutView from '../views/AboutView.vue'
+import AdminProductsView from '../views/AdminProductsView.vue'
 import CatalogView from '../views/CatalogView.vue'
 import ContactView from '../views/ContactView.vue'
 import HomeView from '../views/HomeView.vue'
@@ -13,11 +14,24 @@ const router = createRouter({
     { path: '/nosotros', name: 'about', component: AboutView },
     { path: '/contacto', name: 'contact', component: ContactView },
     { path: '/login', name: 'login', component: LoginView },
+    {
+      path: '/admin/productos',
+      name: 'admin-products',
+      component: AdminProductsView,
+      meta: { requiresAuth: true },
+    },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
   scrollBehavior() {
     return { top: 0, behavior: 'smooth' }
   },
+})
+
+router.beforeEach((to) => {
+  if (to.meta.requiresAuth && !localStorage.getItem('token')) {
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
+  return true
 })
 
 export default router

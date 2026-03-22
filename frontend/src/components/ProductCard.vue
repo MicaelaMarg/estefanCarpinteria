@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Product } from '../interfaces/product'
+import { resolveMediaUrl } from '../utils/mediaUrl'
 
 defineProps<{
   product: Product
@@ -14,7 +15,7 @@ const emit = defineEmits<{
   <article class="card-soft group overflow-hidden transition-transform duration-300 hover:-translate-y-1">
     <div class="relative aspect-[4/3] overflow-hidden">
       <img
-        :src="product.image_url"
+        :src="resolveMediaUrl(product.image_url)"
         :alt="product.name"
         class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         loading="lazy"

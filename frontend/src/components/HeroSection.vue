@@ -16,6 +16,7 @@ defineProps<{
       class="h-full w-full object-cover"
       loading="eager"
       decoding="async"
+      fetchpriority="high"
     />
     <div class="absolute inset-0 bg-black/55" />
 

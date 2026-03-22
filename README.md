@@ -52,7 +52,7 @@ Proyecto full stack para catálogo profesional de carpintería.
 
 ## Requisitos
 
-- Node.js 18+
+- Node.js 20+ (recomendado; el backend declara `engines.node >= 20`)
 - MySQL 8+
 
 ## Variables de entorno
@@ -157,37 +157,96 @@ Crear **3 servicios** en Railway:
 
 ### Variables backend en Railway
 
-- `PORT` = `${{PORT}}` (Railway la inyecta automáticamente)
+- `PORT` — Railway la define sola en el servicio
 - `NODE_ENV` = `production`
-- `CORS_ORIGIN` = URL pública del frontend en Railway
+- `CORS_ORIGIN` = URL pública del frontend (se pueden varias separadas por coma)
 - `JWT_SECRET` = secreto seguro
-- `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (desde MySQL service)
+- MySQL: **`DATABASE_URL`** o **`MYSQL_URL`** referenciando el plugin, o variables sueltas (`MYSQLHOST`, `MYSQLUSER`, etc.)
 - `ADMIN_EMAIL`, `ADMIN_PASSWORD` o `ADMIN_PASSWORD_HASH`
+- `PUBLIC_BASE_URL` = URL pública del backend (imágenes subidas)
+- `UPLOAD_DIR` + **Volume** montado en esa ruta (si no, las imágenes se pierden al redeploy)
 
 ### Variables frontend en Railway
 
-- `VITE_API_BASE_URL` = `https://<tu-backend>.up.railway.app/api`
+- `VITE_API_BASE_URL` = `https://<tu-backend>.up.railway.app/api` (obligatorio en el **build**)
 
 La configuración `railway.json` de cada app ya incluye build/start para deploy directo.
 
-### Deploy por CLI (monorepo)
+### Deploy por CLI (Railway)
 
-Ejecutar cada servicio desde su carpeta:
+Instalá el CLI (una sola vez):
 
 ```bash
-# Backend
+npm i -g @railway/cli
+# o: brew install railway
+```
+
+Iniciá sesión:
+
+```bash
+railway login
+```
+
+#### 1) Proyecto y MySQL
+
+En [railway.app](https://railway.app): **New project** → agregá el plugin **MySQL**.  
+Después creá **dos servicios vacíos** (Empty Service) o desde el CLI con `railway init` en cada carpeta (podés elegir “proyecto existente” y crear un servicio nuevo por app).
+
+#### 2) Backend (desde la carpeta `backend`)
+
+Cada deploy debe hacerse **desde dentro de `backend/`**, para que Nixpacks vea ese `package.json`:
+
+```bash
 cd backend
-railway link   # o railway init
-railway up
-
-# Frontend
-cd ../frontend
-railway link   # o railway init
-railway up
+railway link          # elegí el proyecto y el servicio del API (no el de MySQL ni el del frontend)
+railway up            # sube y despliega (equivale a build + start)
 ```
 
-En Windows PowerShell, si aparece error de `railway.ps1`, usar:
+Variables del servicio backend (Dashboard → Variables o `railway variables`):
+
+| Variable | Valor típico |
+|----------|----------------|
+| `NODE_ENV` | `production` |
+| `JWT_SECRET` | un string largo y aleatorio |
+| `CORS_ORIGIN` | URL pública del frontend (ej. `https://tu-frontend.up.railway.app`) |
+| Conexión MySQL | Referenciá el plugin: `${{MySQL.DATABASE_URL}}` como **`DATABASE_URL`**, o las variables `MYSQLHOST`, `MYSQLUSER`, etc. (según lo que muestre Railway) |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | credenciales del panel admin |
+| `PUBLIC_BASE_URL` | URL pública del **backend** sin barra final (ej. `https://tu-api.up.railway.app`) para URLs absolutas de imágenes |
+| `UPLOAD_DIR` | ruta donde montás un **Volume** (ej. `/data/uploads`) |
+
+Después del primer deploy, ejecutá en MySQL el `schema` (y migraciones si aplica), por ejemplo desde la pestaña Query del plugin o un cliente MySQL.
+
+#### 3) Frontend (desde la carpeta `frontend`)
 
 ```bash
-railway.cmd up
+cd frontend
+railway link          # mismo proyecto, **otro** servicio (solo frontend)
+railway variables set VITE_API_BASE_URL=https://TU-BACKEND.up.railway.app/api
+railway up
 ```
+
+`VITE_API_BASE_URL` debe definirse **antes** del build: al cambiarla, volvé a desplegar (`railway up`).
+
+#### Notas CLI
+
+- `railway status` — servicio vinculado y entorno.
+- `railway logs` — ver logs del último deploy.
+- En Windows PowerShell, si falla `railway.ps1`, probá: `railway.cmd up`.
+
+#### Errores comunes
+
+1. **`cd: no such file or directory: backend`**  
+   Estás dentro de `frontend/`. Subí un nivel: `cd ..` y luego `cd backend`, o en una sola línea: `cd ../backend`.
+
+2. **`error: unexpected argument '#' found`**  
+   No pegues comentarios del README en la misma línea. Mal: `railway link    # texto`. Bien: solo `railway link` (o `railway link -p <id-proyecto> -s <id-servicio>`).
+
+3. **`Service: None`**  
+   Hace falta un servicio vacío en el proyecto y vincularlo: `railway add -s nombre-del-servicio` y después `railway link -p ... -s <id>`.
+
+4. **Enlace no interactivo (sin menús)**  
+   `railway list --json` muestra IDs de proyectos y servicios; luego:  
+   `railway link -p <projectId> -s <serviceId> -e production`.
+
+5. **Build backend: `npm ERR! EBUSY` al borrar `node_modules/.cache`**  
+   Suele ser el cache mount de Nixpacks/BuildKit. El repo ya define `backend/nixpacks.toml` (`NPM_CONFIG_CACHE` en `/tmp`) y un `buildCommand` que usa esa caché y `NODE_ENV=development` solo en `npm ci` para instalar devDependencies sin `--include=dev`. Volvé a desplegar (`railway up` desde `backend/` o push a Git).

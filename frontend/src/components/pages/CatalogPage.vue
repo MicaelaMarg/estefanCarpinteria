@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import ProductGrid from '../ProductGrid.vue'
 import { useProducts } from '../../composables/useProducts'
 import type { ProductFilters } from '../../interfaces/product'
+import { resolveMediaUrl } from '../../utils/mediaUrl'
 
 const route = useRoute()
 const router = useRouter()
@@ -70,7 +71,7 @@ onMounted(async () => {
   >
     <article class="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-2xl bg-white shadow-2xl">
       <img
-        :src="selectedProduct.image_url"
+        :src="resolveMediaUrl(selectedProduct.image_url)"
         :alt="selectedProduct.name"
         class="h-72 w-full object-cover"
         loading="lazy"

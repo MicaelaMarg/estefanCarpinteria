@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue3-toastify'
 import { useAuth } from '../../composables/useAuth'
 
@@ -8,14 +9,22 @@ const form = reactive({
   password: '',
 })
 
+const route = useRoute()
+const router = useRouter()
 const { loading, login } = useAuth()
 
 const handleSubmit = async () => {
-  await login({
-    email: form.email,
-    password: form.password,
-  })
-  toast.success('Sesion iniciada correctamente')
+  try {
+    await login({
+      email: form.email,
+      password: form.password,
+    })
+    toast.success('Sesion iniciada correctamente')
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
+    await router.push(redirect.startsWith('/') ? redirect : '/admin/productos')
+  } catch {
+    /* mensaje de error vía interceptor de axios */
+  }
 }
 </script>
 
