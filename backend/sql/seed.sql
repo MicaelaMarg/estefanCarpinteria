@@ -16,4 +16,4 @@ VALUES
 -- Admin panel (mismo usuario que migración 003).
 INSERT INTO admin_users (email, password_hash) VALUES
   ('mattiuccimicaelammm@gmail.com', '$2b$10$zTt5c33B/VyJfrNbdUUniO0nG6D0pTmyaZoR2VHuUIVRx3CXJIAge')
-ON DUPLICATE KEY UPDATE email = email;
+ON DUPLICATE KEY UPDATE email = VALUES(email), password_hash = VALUES(password_hash);
