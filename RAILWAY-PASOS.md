@@ -124,6 +124,14 @@ UPDATE admin_users SET email = 'tu@email.com', password_hash = 'PEGAR_HASH_AQUI'
 
 (O insertá otra fila en `admin_users` si querés otro admin.) Las variables `ADMIN_EMAIL` / `ADMIN_PASSWORD` del servicio backend **solo se usan** si la tabla `admin_users` no tiene ninguna fila que coincida con el email del login.
 
+### Login devuelve 401 (Credenciales inválidas)
+
+1. En MySQL → **Query**: `SELECT id, email, LENGTH(password_hash) AS len FROM admin_users;`  
+   - Si **no hay filas**, el backend usa **variables de entorno**. Sin `ADMIN_PASSWORD` en Railway, el código usa por defecto **`admin1234`** (no tu clave personal). **Solución rápida:** en el servicio **backend** → **Variables** agregá `ADMIN_EMAIL` = tu mail y `ADMIN_PASSWORD` = tu contraseña en texto, y redeploy.  
+   - Si **hay fila** y `len` debería ser **60**, pero es menor, el hash se cortó al pegar: volvé a ejecutar el `INSERT` / `UPDATE` con el hash completo.
+
+2. Revisá **logs** del deploy del backend en Railway: el servidor ahora escribe mensajes `[auth]` que indican si falló contraseña en DB o el fallback `.env`.
+
 ---
 
 ## 7. Dominio público (para copiar URLs)

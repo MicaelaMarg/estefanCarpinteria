@@ -52,6 +52,7 @@ export const login = async (req: Request, res: Response) => {
       if (dbUser) {
         const isValidPassword = await bcrypt.compare(password, dbUser.password_hash)
         if (!isValidPassword) {
+          console.warn('[auth] Contraseña incorrecta para usuario en admin_users:', dbUser.email)
           return sendError(res, 'Credenciales inválidas', 401)
         }
 
@@ -81,8 +82,14 @@ export const login = async (req: Request, res: Response) => {
       }
     }
 
-    // Sin tabla admin_users, o tabla vacía / sin fila: variables de entorno
+    // Sin fila en admin_users para este email: respaldo con variables de entorno
     if (emailNorm !== env.adminEmail.trim().toLowerCase()) {
+      console.warn(
+        '[auth] Sin coincidencia en admin_users y email distinto de ADMIN_EMAIL. Login:',
+        emailNorm,
+        'ADMIN_EMAIL:',
+        env.adminEmail,
+      )
       return sendError(res, 'Credenciales inválidas', 401)
     }
 
@@ -91,6 +98,9 @@ export const login = async (req: Request, res: Response) => {
       : password === env.adminPassword
 
     if (!isValidPassword) {
+      console.warn(
+        '[auth] Contraseña incorrecta (fallback ADMIN_EMAIL / ADMIN_PASSWORD). Si admin_users está vacía, la clave por defecto en código es admin1234 salvo que definas ADMIN_PASSWORD en Railway.',
+      )
       return sendError(res, 'Credenciales inválidas', 401)
     }
 
