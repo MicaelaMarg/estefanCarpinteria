@@ -152,8 +152,31 @@ npm run start
 Crear **3 servicios** en Railway:
 
 1. **MySQL** (plugin oficial)
-2. **backend** (raíz del servicio: `backend/`)
-3. **frontend** (raíz del servicio: `frontend/`)
+2. **backend** (API)
+3. **frontend** (sitio Vue)
+
+### Si “no deploya nada” o no ves builds al hacer push
+
+1. **Conectar el repo**  
+   Servicio → **Settings** → **Source** → conectá **GitHub** y el repo `estefanCarpinteria`, rama **`main`**.
+
+2. **Activar despliegues**  
+   Misma sección: **Wait for CI** desactivado (salvo que uses GitHub Actions) y que el servicio no esté pausado.
+
+3. **Root Directory del API (elegí una sola forma)**  
+   - **Opción A (recomendada):** Root Directory = **`backend`** → usa `backend/Dockerfile` y `backend/railway.json`.  
+   - **Opción B:** Root Directory **vacío** (raíz del repo) → usa **`Dockerfile.api`** y el `railway.json` de la **raíz** del repo.
+
+   Si el Root Directory no coincide con donde está el Dockerfile, el build **no arranca** o falla al instante.
+
+4. **Frontend**  
+   Root Directory = **`frontend`** (para que tome `frontend/package.json` y `frontend/railway.json`).
+
+5. **Redeploy manual**  
+   En el servicio → **Deployments** → **Redeploy** (o **Deploy**), o desde CLI: `railway up` en la carpeta correcta.
+
+6. **Rutas que disparan build** (opcional)  
+   En el servicio del API podés limitar **Watch Paths** a `backend/**` para no redeployar al tocar solo el frontend.
 
 ### Variables backend en Railway
 

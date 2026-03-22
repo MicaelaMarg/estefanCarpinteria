@@ -1,0 +1,19 @@
+# API: contexto = raíz del repo (cuando en Railway "Root Directory" está vacío o es .)
+FROM node:20-bookworm-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY backend/package.json backend/package-lock.json ./
+RUN npm ci
+
+COPY backend/ .
+RUN npm run build
+RUN npm prune --omit=dev
+
+ENV NODE_ENV=production
+EXPOSE 4000
+
+CMD ["node", "dist/server.js"]
