@@ -12,3 +12,8 @@ VALUES
 ('Mesa de trabajo taller', 'Banco robusto para taller con superficie resistente y estantes inferiores.', 420000, 'Mesas', 'https://images.unsplash.com/photo-1519710884006-7b2f7d1824c2?auto=format&fit=crop&w=1200&q=80', NULL, 4, 3),
 ('Vestidor abierto moderno', 'Sistema de vestidor abierto con módulos personalizables y luces LED.', 840000, 'Placares', 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80', NULL, 2, 0),
 ('Proyecto integral living', 'Set completo de living con mueble TV, biblioteca y mesa central.', 1480000, 'A medida', 'https://images.unsplash.com/photo-1615529162924-f860538846bc?auto=format&fit=crop&w=1200&q=80', NULL, 1, 1);
+
+-- Admin panel (contraseña por defecto: admin1234). Cambiala en producción.
+INSERT INTO admin_users (email, password_hash) VALUES
+  ('admin@carpinteria.com', '$2b$10$dSHKvF4fYYyRmqd1zAbSJOG1.uIa0sMaXLTmdKHLT/MwGEB9uL7Ii')
+ON DUPLICATE KEY UPDATE email = email;

@@ -91,7 +91,20 @@ Después de cambiarla: **Redeploy** del frontend (el valor se “hornea” en el
 
 1. Clic en el servicio **MySQL**.
 2. Cuando esté **online**, abrí **Query** o conectate con un cliente y ejecutá el SQL de `backend/sql/schema.sql` (y `seed.sql` si querés datos de prueba).
-3. Si la base ya existía: corré también las migraciones en `backend/sql/migrations/` (por ejemplo `002_add_product_stock.sql` para stock).
+3. Si la base ya existía: corré también las migraciones en `backend/sql/migrations/` (por ejemplo `002_add_product_stock.sql`, `003_admin_users.sql` para login con email/contraseña en MySQL).
+
+### Admin: email y contraseña en MySQL
+
+Tras `003_admin_users.sql` (o `seed.sql`), el usuario por defecto es **admin@carpinteria.com** / **admin1234**. Cambiá la contraseña en producción:
+
+1. En tu PC, en `backend/`: `npm run hash-password -- "TuNuevaClave"` → copiá el hash.
+2. En Railway → MySQL → **Query**:
+
+```sql
+UPDATE admin_users SET email = 'tu@email.com', password_hash = 'PEGAR_HASH_AQUI' WHERE id = 1;
+```
+
+(O insertá otra fila en `admin_users` si querés otro admin.) Las variables `ADMIN_EMAIL` / `ADMIN_PASSWORD` del servicio backend **solo se usan** si la tabla `admin_users` no tiene ninguna fila que coincida con el email del login.
 
 ---
 

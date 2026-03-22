@@ -140,12 +140,16 @@ npm run start
 
 ### Ejemplo login
 
+El usuario admin vive en MySQL (`admin_users`) tras aplicar `schema.sql` / migración `003_admin_users.sql` (por defecto `admin@carpinteria.com` / `admin1234`). Si la tabla está vacía, se usan `ADMIN_EMAIL` / `ADMIN_PASSWORD` del `.env`.
+
 ```json
 {
   "email": "admin@carpinteria.com",
   "password": "admin1234"
 }
 ```
+
+Hash para cambiar contraseña en la base: `cd backend && npm run hash-password -- "nueva_clave"`.
 
 ## Deploy en Railway
 
