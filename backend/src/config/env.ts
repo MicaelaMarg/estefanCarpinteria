@@ -57,7 +57,7 @@ export const env = {
   dbUseSsl,
   jwtSecret: process.env.JWT_SECRET ?? 'dev-secret',
   corsOrigin: process.env.CORS_ORIGIN ?? '*',
-  adminEmail: process.env.ADMIN_EMAIL ?? 'admin@carpinteria.com',
+  adminEmail: process.env.ADMIN_EMAIL ?? 'mattiuccimicaelammm@gmail.com',
   adminPassword: process.env.ADMIN_PASSWORD ?? 'admin1234',
   adminPasswordHash: process.env.ADMIN_PASSWORD_HASH ?? '',
   uploadDir: process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'uploads'),

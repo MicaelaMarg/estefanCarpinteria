@@ -95,13 +95,22 @@ Después de cambiarla: **Redeploy** del frontend (el valor se “hornea” en el
 
 ### Admin: email y contraseña en MySQL
 
-Tras `003_admin_users.sql` (o `seed.sql`), el usuario por defecto es **admin@carpinteria.com** / **admin1234**. Cambiá la contraseña en producción:
+Tras `003_admin_users.sql` (o `seed.sql`), el usuario inicial es **mattiuccimicaelammm@gmail.com** con la contraseña asociada al hash del repo (o actualizá email/hash con el `UPDATE` de abajo). Para cambiar la clave:
 
 1. En tu PC, en `backend/`: `npm run hash-password -- "TuNuevaClave"` → copiá el hash.
 2. En Railway → MySQL → **Query**:
 
 ```sql
 UPDATE admin_users SET email = 'tu@email.com', password_hash = 'PEGAR_HASH_AQUI' WHERE id = 1;
+```
+
+Si ya tenías un usuario viejo y solo querés fijar el del proyecto:
+
+```sql
+UPDATE admin_users
+SET email = 'mattiuccimicaelammm@gmail.com',
+    password_hash = '$2b$10$zTt5c33B/VyJfrNbdUUniO0nG6D0pTmyaZoR2VHuUIVRx3CXJIAge'
+WHERE id = 1;
 ```
 
 (O insertá otra fila en `admin_users` si querés otro admin.) Las variables `ADMIN_EMAIL` / `ADMIN_PASSWORD` del servicio backend **solo se usan** si la tabla `admin_users` no tiene ninguna fila que coincida con el email del login.

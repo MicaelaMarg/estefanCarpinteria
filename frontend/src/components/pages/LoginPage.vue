@@ -43,7 +43,7 @@ const handleSubmit = async () => {
             type="email"
             required
             class="w-full rounded-xl border border-neutral-200 px-4 py-3 outline-none ring-industrial-yellow focus:ring-2"
-            placeholder="admin@carpinteria.com"
+            placeholder="mattiuccimicaelammm@gmail.com"
           />
         </div>
 

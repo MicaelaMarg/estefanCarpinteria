@@ -73,8 +73,8 @@ DB_USER=root
 DB_PASSWORD=password
 DB_NAME=carpinteria
 
-ADMIN_EMAIL=admin@carpinteria.com
-ADMIN_PASSWORD=admin1234
+ADMIN_EMAIL=mattiuccimicaelammm@gmail.com
+# ADMIN_PASSWORD=...  # respaldo si no usás admin_users en MySQL
 ADMIN_PASSWORD_HASH=
 ```
 
@@ -140,12 +140,12 @@ npm run start
 
 ### Ejemplo login
 
-El usuario admin vive en MySQL (`admin_users`) tras aplicar `schema.sql` / migración `003_admin_users.sql` (por defecto `admin@carpinteria.com` / `admin1234`). Si la tabla está vacía, se usan `ADMIN_EMAIL` / `ADMIN_PASSWORD` del `.env`.
+El usuario admin vive en MySQL (`admin_users`) tras aplicar `schema.sql` / migración `003` (email por defecto en el SQL del repo). Si la tabla no existe o está vacía, se usan `ADMIN_EMAIL` / `ADMIN_PASSWORD` del `.env`.
 
 ```json
 {
-  "email": "admin@carpinteria.com",
-  "password": "admin1234"
+  "email": "mattiuccimicaelammm@gmail.com",
+  "password": "tu_contraseña"
 }
 ```
 

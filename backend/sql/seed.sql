@@ -13,7 +13,7 @@ VALUES
 ('Vestidor abierto moderno', 'Sistema de vestidor abierto con módulos personalizables y luces LED.', 840000, 'Placares', 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80', NULL, 2, 0),
 ('Proyecto integral living', 'Set completo de living con mueble TV, biblioteca y mesa central.', 1480000, 'A medida', 'https://images.unsplash.com/photo-1615529162924-f860538846bc?auto=format&fit=crop&w=1200&q=80', NULL, 1, 1);
 
--- Admin panel (contraseña por defecto: admin1234). Cambiala en producción.
+-- Admin panel (mismo usuario que migración 003).
 INSERT INTO admin_users (email, password_hash) VALUES
-  ('admin@carpinteria.com', '$2b$10$dSHKvF4fYYyRmqd1zAbSJOG1.uIa0sMaXLTmdKHLT/MwGEB9uL7Ii')
+  ('mattiuccimicaelammm@gmail.com', '$2b$10$zTt5c33B/VyJfrNbdUUniO0nG6D0pTmyaZoR2VHuUIVRx3CXJIAge')
 ON DUPLICATE KEY UPDATE email = email;

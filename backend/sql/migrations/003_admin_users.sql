@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS admin_users (
   UNIQUE KEY uq_admin_users_email (email)
 );
 
--- Contraseña por defecto: admin1234 (cambiala en producción)
+-- Usuario inicial (email del administrador; contraseña = la usada al generar este hash con npm run hash-password)
 INSERT INTO admin_users (email, password_hash) VALUES
-  ('admin@carpinteria.com', '$2b$10$dSHKvF4fYYyRmqd1zAbSJOG1.uIa0sMaXLTmdKHLT/MwGEB9uL7Ii')
+  ('mattiuccimicaelammm@gmail.com', '$2b$10$zTt5c33B/VyJfrNbdUUniO0nG6D0pTmyaZoR2VHuUIVRx3CXJIAge')
 ON DUPLICATE KEY UPDATE email = email;
