@@ -3,6 +3,7 @@ import multer from 'multer'
 import {
   createAdminProduct,
   deleteAdminProduct,
+  ingresoMercaderia,
   listAdminProducts,
   updateAdminProduct,
 } from '../controllers/admin-products.controller.js'
@@ -17,6 +18,7 @@ adminRouter.use(requireAdmin)
 
 adminRouter.get('/products', listAdminProducts)
 adminRouter.post('/products', createAdminProduct)
+adminRouter.post('/products/:id/stock-ingreso', ingresoMercaderia)
 adminRouter.patch('/products/:id', updateAdminProduct)
 adminRouter.delete('/products/:id', deleteAdminProduct)
 

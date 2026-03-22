@@ -85,6 +85,13 @@ onMounted(async () => {
         <p class="text-2xl font-black text-deep-black">
           ${{ selectedProduct.price.toLocaleString('es-AR') }}
         </p>
+        <p class="text-sm text-neutral-600">
+          <span class="font-semibold text-deep-black">Disponible:</span>
+          {{ Number(selectedProduct.stock_disponible ?? 0) }} unid.
+          <span v-if="Number(selectedProduct.stock_disponible ?? 0) === 0" class="ml-2 font-semibold text-red-600">
+            Sin stock
+          </span>
+        </p>
         <button class="btn-primary px-5 py-2.5 text-sm" @click="closeDetail">Cerrar</button>
       </div>
     </article>

@@ -149,6 +149,8 @@ npm run start
 
 ## Deploy en Railway
 
+Guía clic a clic en el panel: **[RAILWAY-PASOS.md](RAILWAY-PASOS.md)**.
+
 Crear **3 servicios** en Railway:
 
 1. **MySQL** (plugin oficial)

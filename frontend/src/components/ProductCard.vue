@@ -2,9 +2,11 @@
 import type { Product } from '../interfaces/product'
 import { resolveMediaUrl } from '../utils/mediaUrl'
 
-defineProps<{
+const props = defineProps<{
   product: Product
 }>()
+
+const disponible = () => Number(props.product.stock_disponible ?? 0)
 
 const emit = defineEmits<{
   detail: [id: number]
@@ -23,6 +25,18 @@ const emit = defineEmits<{
       />
       <span class="absolute left-3 top-3 rounded-full bg-deep-black/80 px-3 py-1 text-xs font-semibold text-industrial-yellow">
         {{ product.category }}
+      </span>
+      <span
+        v-if="disponible() === 0"
+        class="absolute right-3 top-3 rounded-full bg-red-600/95 px-3 py-1 text-xs font-bold text-white"
+      >
+        Sin stock
+      </span>
+      <span
+        v-else
+        class="absolute right-3 top-3 rounded-full bg-deep-black/80 px-3 py-1 text-xs font-semibold text-soft-white"
+      >
+        Quedan {{ disponible() }}
       </span>
     </div>
 

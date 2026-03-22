@@ -5,6 +5,7 @@ import configApi from '../api/configApi'
 import type { ApiResponse } from '../interfaces/api'
 import type { Product } from '../interfaces/product'
 import { resolveMediaUrl } from '../utils/mediaUrl'
+import { stockVendido } from '../utils/stock'
 
 const MAX_BYTES = 5 * 1024 * 1024
 
@@ -12,6 +13,7 @@ const products = ref<Product[]>([])
 const total = ref(0)
 const loading = ref(false)
 const saving = ref(false)
+const ingresoLoading = ref(false)
 
 const editingId = ref<number | null>(null)
 const form = ref({
@@ -21,7 +23,15 @@ const form = ref({
   category: '',
   video_url: '',
   image_url: '',
+  stock_cargado: 0,
+  stock_disponible: 0,
 })
+
+const ingresoCantidad = ref<number | ''>('')
+
+const vendidoPreview = computed(() =>
+  stockVendido(Number(form.value.stock_cargado) || 0, Number(form.value.stock_disponible) || 0),
+)
 
 const imageFile = ref<File | null>(null)
 const pickedPreview = ref('')
@@ -31,6 +41,13 @@ const coverImageSrc = computed(() => {
   if (form.value.image_url) return resolveMediaUrl(form.value.image_url)
   return ''
 })
+
+const lineaStock = (p: Product) => {
+  const c = Number(p.stock_cargado ?? 0)
+  const d = Number(p.stock_disponible ?? 0)
+  const v = stockVendido(c, d)
+  return `Cargadas ${c} · Disponibles ${d} · Vendidas ${v}`
+}
 
 const resetForm = () => {
   if (pickedPreview.value.startsWith('blob:')) {
@@ -44,9 +61,12 @@ const resetForm = () => {
     category: '',
     video_url: '',
     image_url: '',
+    stock_cargado: 0,
+    stock_disponible: 0,
   }
   imageFile.value = null
   pickedPreview.value = ''
+  ingresoCantidad.value = ''
 }
 
 const onFileChange = (e: Event) => {
@@ -102,9 +122,15 @@ const saveProduct = async () => {
     const description = form.value.description.trim()
     const category = form.value.category.trim()
     const video_url = form.value.video_url.trim() || null
+    const stock_cargado = Math.floor(Number(form.value.stock_cargado)) || 0
+    const stock_disponible = Math.floor(Number(form.value.stock_disponible)) || 0
 
     if (!name || !description || !category || !Number.isFinite(price) || price < 0) {
       toast.error('Completá nombre, descripción, categoría y precio válido')
+      return
+    }
+    if (stock_disponible > stock_cargado) {
+      toast.error('Disponible no puede ser mayor que mercadería cargada')
       return
     }
 
@@ -116,6 +142,8 @@ const saveProduct = async () => {
         category,
         image_url,
         video_url,
+        stock_cargado,
+        stock_disponible,
       })
       toast.success('Producto actualizado')
     } else {
@@ -126,6 +154,8 @@ const saveProduct = async () => {
         category,
         image_url,
         video_url,
+        stock_cargado,
+        stock_disponible,
       })
       toast.success('Producto creado')
     }
@@ -137,6 +167,29 @@ const saveProduct = async () => {
     }
   } finally {
     saving.value = false
+  }
+}
+
+const aplicarIngresoMercaderia = async () => {
+  if (!editingId.value) {
+    toast.error('Seleccioná un producto para ingreso')
+    return
+  }
+  const n = Math.floor(Number(ingresoCantidad.value))
+  if (!Number.isFinite(n) || n < 1) {
+    toast.error('Ingresá una cantidad entera mayor a 0')
+    return
+  }
+  ingresoLoading.value = true
+  try {
+    await configApi.post(`/admin/products/${editingId.value}/stock-ingreso`, { cantidad: n })
+    toast.success(`Se sumaron ${n} unidad(es) a cargado y disponible`)
+    ingresoCantidad.value = ''
+    await fetchList()
+    const p = products.value.find((x) => x.id === editingId.value)
+    if (p) startEdit(p)
+  } finally {
+    ingresoLoading.value = false
   }
 }
 
@@ -152,9 +205,12 @@ const startEdit = (p: Product) => {
     category: p.category,
     video_url: p.video_url ?? '',
     image_url: p.image_url,
+    stock_cargado: Number(p.stock_cargado ?? 0),
+    stock_disponible: Number(p.stock_disponible ?? 0),
   }
   imageFile.value = null
   pickedPreview.value = ''
+  ingresoCantidad.value = ''
 }
 
 const removeProduct = async (p: Product) => {
@@ -179,13 +235,13 @@ onMounted(() => {
     <div class="mb-8 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
       <div>
         <p class="text-sm font-semibold uppercase tracking-[0.14em] text-industrial-yellow">Administración</p>
-        <h1 class="text-3xl font-black text-deep-black">Productos</h1>
+        <h1 class="text-3xl font-black text-deep-black">Productos y stock</h1>
         <p class="text-sm text-neutral-600">{{ total }} en catálogo</p>
       </div>
       <button type="button" class="btn-primary px-4 py-2 text-sm" @click="resetForm">Nuevo producto</button>
     </div>
 
-    <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
+    <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
       <div class="card-soft overflow-hidden p-0">
         <div v-if="loading" class="p-8 text-center text-neutral-500">Cargando…</div>
         <ul v-else class="divide-y divide-neutral-200">
@@ -204,6 +260,7 @@ onMounted(() => {
               <div class="min-w-0">
                 <p class="truncate font-bold text-deep-black">{{ p.name }}</p>
                 <p class="text-sm text-neutral-500">{{ p.category }} · ${{ p.price.toLocaleString('es-AR') }}</p>
+                <p class="text-xs font-medium text-neutral-600">{{ lineaStock(p) }}</p>
               </div>
             </div>
             <div class="flex shrink-0 gap-2">
@@ -224,6 +281,63 @@ onMounted(() => {
 
       <div class="card-soft space-y-4 p-6">
         <h2 class="text-lg font-black text-deep-black">{{ editingId ? 'Editar producto' : 'Alta de producto' }}</h2>
+
+        <p class="rounded-lg bg-neutral-100 p-3 text-xs text-neutral-700">
+          <strong>Stock manual:</strong> «Mercadería cargada» es lo que pusiste a la venta (referencia). «Disponible» es lo
+          que queda ahora (lo actualizás cuando vendés o inventariás).
+          <strong>Vendidas</strong> se calcula solo: cargadas − disponibles. Para nueva mercadería sin cambiar lo ya vendido,
+          usá «Ingreso de mercadería».
+        </p>
+
+        <div class="rounded-xl border border-neutral-200 bg-soft-white p-3">
+          <p class="text-xs font-semibold text-neutral-600">Vendidas (automático)</p>
+          <p class="text-2xl font-black text-deep-black">{{ vendidoPreview }}</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-neutral-600">Mercadería cargada (unid.)</label>
+            <input
+              v-model.number="form.stock_cargado"
+              type="number"
+              min="0"
+              step="1"
+              class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-neutral-600">Disponible ahora (unid.)</label>
+            <input
+              v-model.number="form.stock_disponible"
+              type="number"
+              min="0"
+              step="1"
+              class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+
+        <div v-if="editingId" class="flex flex-wrap items-end gap-2 rounded-xl border border-industrial-yellow/40 bg-industrial-yellow/10 p-3">
+          <div class="min-w-[120px] flex-1">
+            <label class="mb-1 block text-xs font-semibold text-neutral-700">Ingreso de mercadería (+unid.)</label>
+            <input
+              v-model.number="ingresoCantidad"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Ej. 10"
+              class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"
+            />
+          </div>
+          <button
+            type="button"
+            class="btn-primary px-4 py-2 text-sm"
+            :disabled="ingresoLoading"
+            @click="aplicarIngresoMercaderia"
+          >
+            {{ ingresoLoading ? '…' : 'Sumar ingreso' }}
+          </button>
+        </div>
 
         <div>
           <label class="mb-1 block text-xs font-semibold text-neutral-600">Imagen (WebP optimizado al subir)</label>

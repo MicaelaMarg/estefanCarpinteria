@@ -15,5 +15,7 @@ export interface Product extends RowDataPacket {
   category: string
   image_url: string
   video_url: string | null
+  stock_cargado: number
+  stock_disponible: number
   created_at: Date
 }

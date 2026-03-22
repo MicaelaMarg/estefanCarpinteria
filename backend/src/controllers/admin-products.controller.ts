@@ -21,6 +21,14 @@ type ProductBody = {
   category?: string
   image_url?: string
   video_url?: string | null
+  stock_cargado?: number
+  stock_disponible?: number
+}
+
+const nonNegativeInt = (value: unknown, fallback: number) => {
+  const n = Math.floor(Number(value))
+  if (!Number.isFinite(n) || n < 0) return fallback
+  return n
 }
 
 const validateCreate = (body: ProductBody) => {
@@ -54,8 +62,14 @@ const validateCreate = (body: ProductBody) => {
     return { error: 'URL de imagen demasiado larga' as const }
   }
 
+  const stock_cargado = nonNegativeInt(body.stock_cargado, 0)
+  const stock_disponible = nonNegativeInt(body.stock_disponible, 0)
+  if (stock_disponible > stock_cargado) {
+    return { error: 'Disponible no puede superar la mercadería cargada' as const }
+  }
+
   return {
-    value: { name, description, category, price, image_url, video_url },
+    value: { name, description, category, price, image_url, video_url, stock_cargado, stock_disponible },
   }
 }
 
@@ -119,6 +133,18 @@ const validatePatch = (body: ProductBody) => {
     params.push(video_url)
   }
 
+  if (body.stock_cargado !== undefined) {
+    const stock_cargado = nonNegativeInt(body.stock_cargado, 0)
+    updates.push('stock_cargado = ?')
+    params.push(stock_cargado)
+  }
+
+  if (body.stock_disponible !== undefined) {
+    const stock_disponible = nonNegativeInt(body.stock_disponible, 0)
+    updates.push('stock_disponible = ?')
+    params.push(stock_disponible)
+  }
+
   if (updates.length === 0) {
     return { error: 'Nada que actualizar' as const }
   }
@@ -136,7 +162,7 @@ export const listAdminProducts = async (req: AuthRequest, res: Response) => {
     const total = Number(countRows[0]?.total ?? 0)
 
     const [rows] = await pool.query<Product[]>(
-      `SELECT id, name, description, price, category, image_url, video_url, created_at
+      `SELECT id, name, description, price, category, image_url, video_url, stock_cargado, stock_disponible, created_at
        FROM products
        ORDER BY created_at DESC
        LIMIT ? OFFSET ?`,
@@ -156,12 +182,13 @@ export const createAdminProduct = async (req: AuthRequest, res: Response) => {
     if ('error' in parsed) {
       return sendError(res, String(parsed.error), 400)
     }
-    const { name, description, category, price, image_url, video_url } = parsed.value
+    const { name, description, category, price, image_url, video_url, stock_cargado, stock_disponible } =
+      parsed.value
 
     const [result] = await pool.query<ResultSetHeader>(
-      `INSERT INTO products (name, description, price, category, image_url, video_url)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [name, description, price, category, image_url, video_url],
+      `INSERT INTO products (name, description, price, category, image_url, video_url, stock_cargado, stock_disponible)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, description, price, category, image_url, video_url, stock_cargado, stock_disponible],
     )
 
     const [rows] = await pool.query<Product[]>('SELECT * FROM products WHERE id = ? LIMIT 1', [
@@ -207,10 +234,59 @@ export const updateAdminProduct = async (req: AuthRequest, res: Response) => {
     if (!product) {
       return sendError(res, 'Producto no encontrado', 404)
     }
+
+    if (product.stock_disponible > product.stock_cargado) {
+      await pool.query(
+        'UPDATE products SET stock_disponible = stock_cargado WHERE id = ?',
+        [id],
+      )
+      const [again] = await pool.query<Product[]>('SELECT * FROM products WHERE id = ? LIMIT 1', [id])
+      const fixed = again[0]
+      if (fixed) {
+        return sendSuccess(res, fixed, 1, 'Producto actualizado (disponible igualado a lo cargado)')
+      }
+    }
+
     return sendSuccess(res, product, 1, 'Producto actualizado')
   } catch (error) {
     console.error(error)
     return sendError(res, 'No se pudo actualizar el producto', 500)
+  }
+}
+
+/** Suma la misma cantidad a cargado y disponible (nueva mercadería sin cambiar lo ya vendido) */
+export const ingresoMercaderia = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = Number(req.params.id)
+    if (!Number.isInteger(id) || id <= 0) {
+      return sendError(res, 'ID inválido', 400)
+    }
+
+    const cantidad = Math.floor(Number((req.body as { cantidad?: number }).cantidad))
+    if (!Number.isFinite(cantidad) || cantidad <= 0) {
+      return sendError(res, 'Cantidad inválida (entero mayor a 0)', 400)
+    }
+
+    const [result] = await pool.query<ResultSetHeader>(
+      `UPDATE products
+       SET stock_cargado = stock_cargado + ?, stock_disponible = stock_disponible + ?
+       WHERE id = ?`,
+      [cantidad, cantidad, id],
+    )
+
+    if (result.affectedRows === 0) {
+      return sendError(res, 'Producto no encontrado', 404)
+    }
+
+    const [rows] = await pool.query<Product[]>('SELECT * FROM products WHERE id = ? LIMIT 1', [id])
+    const product = rows[0]
+    if (!product) {
+      return sendError(res, 'Producto no encontrado', 404)
+    }
+    return sendSuccess(res, product, 1, `Ingresaron ${cantidad} unidad(es)`)
+  } catch (error) {
+    console.error(error)
+    return sendError(res, 'No se pudo registrar el ingreso', 500)
   }
 }
 

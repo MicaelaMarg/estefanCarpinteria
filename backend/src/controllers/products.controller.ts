@@ -53,7 +53,7 @@ export const getProducts = async (req: Request, res: Response) => {
     const total = countRows[0]?.total ?? 0
 
     const productsQuery = `
-      SELECT id, name, description, price, category, image_url, video_url, created_at
+      SELECT id, name, description, price, category, image_url, video_url, stock_cargado, stock_disponible, created_at
       FROM products
       ${whereClause}
       ORDER BY created_at DESC

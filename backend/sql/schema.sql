@@ -6,5 +6,7 @@ CREATE TABLE IF NOT EXISTS products (
   category VARCHAR(80) NOT NULL,
   image_url VARCHAR(2048) NOT NULL,
   video_url VARCHAR(2048) NULL,
+  stock_cargado INT NOT NULL DEFAULT 0,
+  stock_disponible INT NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
