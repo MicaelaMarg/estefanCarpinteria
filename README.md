@@ -248,5 +248,5 @@ railway up
    `railway list --json` muestra IDs de proyectos y servicios; luego:  
    `railway link -p <projectId> -s <serviceId> -e production`.
 
-5. **Build backend: `npm ERR! EBUSY` al borrar `node_modules/.cache`**  
-   Suele ser el cache mount de Nixpacks/BuildKit. El repo ya define `backend/nixpacks.toml` (`NPM_CONFIG_CACHE` en `/tmp`) y un `buildCommand` que usa esa caché y `NODE_ENV=development` solo en `npm ci` para instalar devDependencies sin `--include=dev`. Volvé a desplegar (`railway up` desde `backend/` o push a Git).
+5. **Build backend: `npm ERR! EBUSY` en `node_modules/.cache`**  
+   El servicio **backend** en Railway usa **`Dockerfile`** (no Nixpacks) para evitar el conflicto con los cache mounts de BuildKit. Si cambiás el builder en `railway.json`, podés volver a Nixpacks + `nixpacks.toml` como alternativa.
