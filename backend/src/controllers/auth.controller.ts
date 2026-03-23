@@ -50,7 +50,15 @@ export const login = async (req: Request, res: Response) => {
     if (rows !== null) {
       const dbUser = rows[0]
       if (dbUser) {
-        const isValidPassword = await bcrypt.compare(password, dbUser.password_hash)
+        const storedHash = dbUser.password_hash?.trim() ?? ''
+        if (storedHash.length !== 60 || !storedHash.startsWith('$2')) {
+          console.warn(
+            '[auth] password_hash en admin_users parece truncado o inválido (len=%s, email=%s). En Railway usá Query con CONCAT(CHAR(36),...) como indica npm run hash-password.',
+            storedHash.length,
+            dbUser.email,
+          )
+        }
+        const isValidPassword = await bcrypt.compare(password, storedHash)
         if (!isValidPassword) {
           console.warn('[auth] Contraseña incorrecta para usuario en admin_users:', dbUser.email)
           return sendError(res, 'Credenciales inválidas', 401)

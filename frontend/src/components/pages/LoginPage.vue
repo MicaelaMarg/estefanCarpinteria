@@ -32,28 +32,28 @@ const handleSubmit = async () => {
   <section class="section-container py-16">
     <div class="mx-auto max-w-md card-soft p-7">
       <p class="text-sm font-semibold uppercase tracking-[0.14em] text-industrial-yellow">Acceso</p>
-      <h1 class="mt-2 text-3xl font-black text-deep-black">Iniciar sesion</h1>
-      <p class="mt-2 text-sm text-neutral-600">Panel preparado para autenticacion JWT.</p>
+      <h1 class="mt-2 text-3xl font-black text-soft-white">Iniciar sesion</h1>
+      <p class="mt-2 text-sm text-neutral-400">Panel preparado para autenticacion JWT.</p>
 
       <form class="mt-6 space-y-4" @submit.prevent="handleSubmit">
         <div>
-          <label class="mb-1 block text-sm font-semibold text-neutral-700">Email</label>
+          <label class="mb-1 block text-sm font-semibold text-neutral-300">Email</label>
           <input
             v-model="form.email"
             type="email"
             required
-            class="w-full rounded-xl border border-neutral-200 px-4 py-3 outline-none ring-industrial-yellow focus:ring-2"
+            class="input-inferno w-full px-4 py-3"
             placeholder="mattiuccimicaelammm@gmail.com"
           />
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-semibold text-neutral-700">Contrasena</label>
+          <label class="mb-1 block text-sm font-semibold text-neutral-300">Contrasena</label>
           <input
             v-model="form.password"
             type="password"
             required
-            class="w-full rounded-xl border border-neutral-200 px-4 py-3 outline-none ring-industrial-yellow focus:ring-2"
+            class="input-inferno w-full px-4 py-3"
             placeholder="********"
           />
         </div>

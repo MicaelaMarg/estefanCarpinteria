@@ -6,9 +6,11 @@ import WhatsAppButton from './components/WhatsAppButton.vue'
 </script>
 
 <template>
-  <div class="min-h-screen bg-soft-white text-deep-black">
+  <div class="relative isolate min-h-screen text-soft-white">
+    <div class="pointer-events-none fixed inset-0 -z-20 inferno-gradient" aria-hidden="true" />
+    <div class="pointer-events-none fixed inset-0 -z-10 inferno-noise" aria-hidden="true" />
     <Navbar />
-    <main class="pt-20">
+    <main class="relative z-10 pt-20">
       <RouterView />
     </main>
     <Footer />

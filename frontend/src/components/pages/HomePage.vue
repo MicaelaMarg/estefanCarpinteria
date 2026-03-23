@@ -25,12 +25,12 @@ onMounted(() => {
       <div class="mb-8 flex items-end justify-between">
         <div>
           <p class="text-sm font-semibold uppercase tracking-[0.14em] text-industrial-yellow">Destacados</p>
-          <h2 class="mt-2 text-4xl font-black text-deep-black">Productos recomendados</h2>
+          <h2 class="mt-2 text-4xl font-black text-soft-white">Productos recomendados</h2>
         </div>
       </div>
 
       <div v-if="loading" class="grid gap-6 md:grid-cols-3">
-        <div v-for="n in 3" :key="n" class="h-80 animate-pulse rounded-2xl bg-neutral-200" />
+        <div v-for="n in 3" :key="n" class="h-80 animate-pulse rounded-2xl bg-white/10" />
       </div>
 
       <div v-else class="grid gap-6 md:grid-cols-3">
@@ -43,14 +43,23 @@ onMounted(() => {
       </div>
     </section>
 
-    <section class="bg-deep-black py-14 text-soft-white">
-      <div class="section-container flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+    <section class="section-container py-14">
+      <div
+        class="flex flex-col gap-8 rounded-2xl border border-white/10 bg-black/50 px-8 py-10 backdrop-blur-md md:flex-row md:items-center md:justify-between"
+      >
         <div>
-          <h3 class="text-3xl font-extrabold">Seguinos en redes</h3>
+          <h3 class="text-3xl font-extrabold text-soft-white">Seguinos en redes</h3>
           <p class="mt-2 text-neutral-300">Nuevos proyectos, procesos de taller y lanzamientos exclusivos.</p>
         </div>
         <div class="flex gap-3">
-          <a href="https://instagram.com/maderaenveta/" target="_blank" rel="noreferrer" class="rounded-lg border border-neutral-700 px-4 py-2 hover:border-industrial-yellow hover:text-industrial-yellow">Instagram</a>
+          <a
+            href="https://instagram.com/maderaenveta/"
+            target="_blank"
+            rel="noreferrer"
+            class="rounded-lg border border-white/20 px-4 py-2 text-soft-white transition hover:border-industrial-yellow hover:text-industrial-yellow"
+          >
+            Instagram
+          </a>
         </div>
       </div>
     </section>

@@ -41,12 +41,12 @@ const emit = defineEmits<{
     </div>
 
     <div class="space-y-3 p-5">
-      <h3 class="line-clamp-1 text-lg font-bold text-deep-black">{{ product.name }}</h3>
-      <p class="line-clamp-2 text-sm text-neutral-600">
+      <h3 class="line-clamp-1 text-lg font-bold text-soft-white">{{ product.name }}</h3>
+      <p class="line-clamp-2 text-sm text-neutral-300">
         {{ product.description }}
       </p>
       <div class="flex items-center justify-between pt-1">
-        <p class="text-xl font-extrabold text-deep-black">${{ product.price.toLocaleString('es-AR') }}</p>
+        <p class="text-xl font-extrabold text-industrial-yellow">${{ product.price.toLocaleString('es-AR') }}</p>
         <button class="btn-primary px-4 py-2 text-sm" @click="emit('detail', product.id)">
           Ver detalle
         </button>

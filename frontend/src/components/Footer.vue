@@ -1,5 +1,7 @@
 <template>
-  <footer class="bg-deep-black py-12 text-soft-white">
+  <footer
+    class="relative z-10 border-t border-white/10 bg-deep-black/90 py-12 text-soft-white backdrop-blur-md"
+  >
     <div class="section-container grid gap-8 md:grid-cols-3">
       <div>
         <p class="text-xl font-bold text-industrial-yellow">Estefan Carpinteria</p>

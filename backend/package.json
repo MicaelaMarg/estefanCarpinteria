@@ -11,7 +11,8 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "hash-password": "node scripts/hash-password.mjs"
+    "hash-password": "node scripts/hash-password.mjs",
+    "admin-bootstrap-sql": "node scripts/admin-bootstrap-sql.mjs"
   },
   "keywords": [],
   "author": "Estefan Carpintería",

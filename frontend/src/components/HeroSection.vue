@@ -18,7 +18,10 @@ defineProps<{
       decoding="async"
       fetchpriority="high"
     />
-    <div class="absolute inset-0 bg-black/55" />
+    <div
+      class="absolute inset-0 bg-gradient-to-t from-deep-black via-deep-black/65 to-inferno-red/25"
+    />
+    <div class="absolute inset-0 bg-black/35" />
 
     <div class="section-container absolute inset-0 flex flex-col items-start justify-center text-left">
       <p class="mb-4 rounded-full bg-industrial-yellow px-4 py-2 text-xs font-bold tracking-[0.16em] text-deep-black">

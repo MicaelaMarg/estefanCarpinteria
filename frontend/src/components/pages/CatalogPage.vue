@@ -51,7 +51,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="bg-soft-white pb-16">
+  <div class="pb-16">
     <ProductGrid
       :products="products"
       :loading="loading"
@@ -69,7 +69,7 @@ onMounted(async () => {
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4"
     @click.self="closeDetail"
   >
-    <article class="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-2xl bg-white shadow-2xl">
+    <article class="card-light max-h-[90vh] w-full max-w-3xl overflow-auto">
       <img
         :src="resolveMediaUrl(selectedProduct.image_url)"
         :alt="selectedProduct.name"
@@ -77,18 +77,20 @@ onMounted(async () => {
         loading="lazy"
       />
       <div class="space-y-4 p-6">
-        <p class="inline-flex rounded-full bg-industrial-yellow px-3 py-1 text-xs font-bold uppercase tracking-wide text-deep-black">
+        <p
+          class="inline-flex rounded-full bg-gradient-to-r from-inferno-orange to-inferno-red px-3 py-1 text-xs font-bold uppercase tracking-wide text-deep-black"
+        >
           {{ selectedProduct.category }}
         </p>
-        <h3 class="text-3xl font-extrabold text-deep-black">{{ selectedProduct.name }}</h3>
-        <p class="text-neutral-700">{{ selectedProduct.description }}</p>
-        <p class="text-2xl font-black text-deep-black">
+        <h3 class="text-3xl font-extrabold text-soft-white">{{ selectedProduct.name }}</h3>
+        <p class="text-neutral-300">{{ selectedProduct.description }}</p>
+        <p class="text-2xl font-black text-industrial-yellow">
           ${{ selectedProduct.price.toLocaleString('es-AR') }}
         </p>
-        <p class="text-sm text-neutral-600">
-          <span class="font-semibold text-deep-black">Disponible:</span>
+        <p class="text-sm text-neutral-400">
+          <span class="font-semibold text-soft-white">Disponible:</span>
           {{ Number(selectedProduct.stock_disponible ?? 0) }} unid.
-          <span v-if="Number(selectedProduct.stock_disponible ?? 0) === 0" class="ml-2 font-semibold text-red-600">
+          <span v-if="Number(selectedProduct.stock_disponible ?? 0) === 0" class="ml-2 font-semibold text-red-400">
             Sin stock
           </span>
         </p>
