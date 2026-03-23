@@ -19,7 +19,7 @@ defineProps<{
       fetchpriority="high"
     />
     <div
-      class="absolute inset-0 bg-gradient-to-t from-deep-black via-deep-black/65 to-inferno-red/25"
+      class="absolute inset-0 bg-gradient-to-t from-deep-black via-wood-ebony/70 to-wood-amber/20"
     />
     <div class="absolute inset-0 bg-black/35" />
 

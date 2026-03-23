@@ -1,15 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  /* Degradado inferno (referencia: naranja → rojo → burdeos) + acentos */
-  --color-inferno-orange: #ff9100;
-  --color-inferno-red: #e62e00;
-  --color-inferno-burgundy: #400000;
-  --color-industrial-yellow: #ffc266;
+  /* Gama madera / terracota (referencia paleta crema → ocre → chocolate) */
+  --color-wood-cream: #f9d5b4;
+  --color-wood-sand: #f1c18d;
+  --color-wood-ochre: #e5a662;
+  --color-wood-amber: #d28b46;
+  --color-wood-copper: #b06538;
+  --color-wood-terra: #8c4b27;
+  --color-wood-chocolate: #4d2e19;
+  --color-wood-ebony: #2d1b10;
+  /* Tokens usados en componentes (mapeados a la misma gama) */
+  --color-inferno-orange: #d28b46;
+  --color-inferno-red: #8c4b27;
+  --color-inferno-burgundy: #4d2e19;
+  --color-industrial-yellow: #f1c18d;
   --color-deep-black: #070707;
   --color-dark-gray: #141414;
-  --color-soft-white: #f4f0eb;
-  --color-wood-brown: #c4875e;
+  --color-soft-white: #f9f4ee;
+  --color-wood-brown: #b06538;
 }
 
 :root {
@@ -30,14 +39,18 @@ body {
   min-height: 100vh;
 }
 
-/* Fondo fijo: degradado vertical + leve textura */
+/* Fondo fijo: degradado vertical en gama cálida + negro */
 .inferno-gradient {
   background: linear-gradient(
     180deg,
-    #ff9100 0%,
-    #e62e00 32%,
-    #8a1508 58%,
-    #3d0808 78%,
+    #f9d5b4 0%,
+    #f1c18d 14%,
+    #e5a662 28%,
+    #d28b46 40%,
+    #b06538 52%,
+    #8c4b27 64%,
+    #4d2e19 78%,
+    #2d1b10 90%,
     #070707 100%
   );
 }
@@ -61,11 +74,11 @@ body {
 
 .btn-primary {
   border-radius: 0.75rem;
-  background: linear-gradient(135deg, #ff9100 0%, #e62e00 100%);
-  color: #0a0a0a;
+  background: linear-gradient(135deg, #e5a662 0%, #b06538 45%, #8c4b27 100%);
+  color: #1a0f0a;
   font-weight: 700;
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 20px rgba(230, 46, 0, 0.35);
+  box-shadow: 0 4px 22px rgba(77, 46, 25, 0.45);
 }
 
 .btn-primary:hover {
@@ -111,6 +124,6 @@ body {
 }
 
 .input-inferno:focus {
-  box-shadow: 0 0 0 2px rgba(255, 145, 0, 0.45);
-  border-color: rgba(255, 145, 0, 0.5);
+  box-shadow: 0 0 0 2px rgba(210, 139, 70, 0.45);
+  border-color: rgba(224, 166, 98, 0.55);
 }
