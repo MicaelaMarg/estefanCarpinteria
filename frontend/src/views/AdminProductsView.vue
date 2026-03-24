@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import axios from 'axios'
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue3-toastify'
 import configApi from '../api/configApi'
@@ -12,6 +13,7 @@ const MAX_BYTES = 5 * 1024 * 1024
 const products = ref<Product[]>([])
 const total = ref(0)
 const loading = ref(false)
+const listLoadError = ref<string | null>(null)
 const saving = ref(false)
 const ingresoLoading = ref(false)
 
@@ -89,12 +91,24 @@ const onFileChange = (e: Event) => {
 
 const fetchList = async () => {
   loading.value = true
+  listLoadError.value = null
   try {
     const { data } = await configApi.get<ApiResponse<Product[]>>('/admin/products', {
       params: { limit: 200, page: 1 },
     })
-    products.value = data.data
+    if (data.status === 'error') {
+      listLoadError.value = data.message
+      toast.error(data.message)
+      return
+    }
+    products.value = Array.isArray(data.data) ? data.data : []
     total.value = data.total
+  } catch (e: unknown) {
+    const msg = axios.isAxiosError(e)
+      ? String(e.response?.data?.message ?? e.message ?? 'No se pudo cargar el catálogo')
+      : 'No se pudo cargar el catálogo'
+    listLoadError.value = msg
+    toast.error(msg)
   } finally {
     loading.value = false
   }
@@ -242,8 +256,28 @@ onMounted(() => {
     </div>
 
     <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
-      <div class="card-soft overflow-hidden p-0">
+      <div class="card-soft min-h-[280px] overflow-hidden p-0">
         <div v-if="loading" class="p-8 text-center text-neutral-500">Cargando…</div>
+        <div
+          v-else-if="listLoadError"
+          class="p-8 text-center text-sm text-red-400"
+        >
+          <p class="font-semibold">No se pudo cargar la lista</p>
+          <p class="mt-2 text-neutral-400">{{ listLoadError }}</p>
+          <button type="button" class="btn-primary mt-4 px-4 py-2 text-sm" @click="fetchList">
+            Reintentar
+          </button>
+        </div>
+        <div
+          v-else-if="products.length === 0"
+          class="p-8 text-center text-sm text-neutral-400"
+        >
+          <p class="font-semibold text-soft-white">Todavía no hay productos en la base</p>
+          <p class="mt-2">
+            En Railway la base suele arrancar vacía (el seed solo corre en local). Usá el formulario de la derecha:
+            nombre, descripción, categoría, precio e imagen, y guardá.
+          </p>
+        </div>
         <ul v-else class="divide-y divide-white/10">
           <li
             v-for="p in products"
@@ -285,12 +319,65 @@ onMounted(() => {
 
       <div class="card-soft space-y-4 p-6">
         <h2 class="text-lg font-black text-soft-white">{{ editingId ? 'Editar producto' : 'Alta de producto' }}</h2>
+        <p class="text-xs text-neutral-400">
+          Completá los campos de texto primero, subí una imagen y definí stock. Los inputs vacíos son normales hasta que cargues datos.
+        </p>
+
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-neutral-400">Nombre</label>
+          <input
+            v-model="form.name"
+            class="input-inferno w-full px-3 py-2 text-sm"
+            placeholder="Ej. Mesa ratona roble"
+            autocomplete="off"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-neutral-400">Descripción</label>
+          <textarea
+            v-model="form.description"
+            rows="3"
+            class="input-inferno w-full px-3 py-2 text-sm"
+            placeholder="Medidas, madera, terminación…"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-neutral-400">Precio</label>
+            <input
+              v-model.number="form.price"
+              type="number"
+              min="0"
+              step="0.01"
+              class="input-inferno w-full px-3 py-2 text-sm"
+              placeholder="0"
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-neutral-400">Categoría</label>
+            <input
+              v-model="form.category"
+              class="input-inferno w-full px-3 py-2 text-sm"
+              placeholder="Ej. Mesas"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-neutral-400">Imagen (WebP optimizado al subir)</label>
+          <input type="file" accept="image/*" class="w-full text-sm text-neutral-300" @change="onFileChange" />
+          <p class="mt-1 text-xs text-neutral-500">Máx. 5 MB. Si editás sin cambiar archivo, se mantiene la imagen actual.</p>
+          <div v-if="coverImageSrc" class="mt-3 overflow-hidden rounded-xl border border-white/15">
+            <img :src="coverImageSrc" alt="Vista previa" class="h-40 w-full object-cover" />
+          </div>
+        </div>
 
         <p class="rounded-lg border border-white/10 bg-black/40 p-3 text-xs text-neutral-300">
-          <strong>Stock manual:</strong> «Mercadería cargada» es lo que pusiste a la venta (referencia). «Disponible» es lo
-          que queda ahora (lo actualizás cuando vendés o inventariás).
-          <strong>Vendidas</strong> se calcula solo: cargadas − disponibles. Para nueva mercadería sin cambiar lo ya vendido,
-          usá «Ingreso de mercadería».
+          <strong>Stock:</strong> «Mercadería cargada» es la referencia de unidades puestas a la venta; «Disponible» es lo que queda.
+          <strong>Vendidas</strong> = cargadas − disponibles. Con un producto ya creado podés sumar ingreso sin perder lo vendido.
         </p>
 
         <div class="rounded-xl border border-white/10 bg-black/35 p-3">
@@ -347,48 +434,13 @@ onMounted(() => {
         </div>
 
         <div>
-          <label class="mb-1 block text-xs font-semibold text-neutral-400">Imagen (WebP optimizado al subir)</label>
-          <input type="file" accept="image/*" class="w-full text-sm text-neutral-300" @change="onFileChange" />
-          <p class="mt-1 text-xs text-neutral-500">Máx. 5 MB. Si editás sin cambiar archivo, se mantiene la imagen actual.</p>
-          <div v-if="coverImageSrc" class="mt-3 overflow-hidden rounded-xl border border-white/15">
-            <img :src="coverImageSrc" alt="Vista previa" class="h-40 w-full object-cover" />
-          </div>
-        </div>
-
-        <div>
-          <label class="mb-1 block text-xs font-semibold text-neutral-400">Nombre</label>
-          <input v-model="form.name" class="input-inferno w-full px-3 py-2 text-sm" />
-        </div>
-
-        <div>
-          <label class="mb-1 block text-xs font-semibold text-neutral-400">Descripción</label>
-          <textarea
-            v-model="form.description"
-            rows="3"
-            class="input-inferno w-full px-3 py-2 text-sm"
-          />
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="mb-1 block text-xs font-semibold text-neutral-400">Precio</label>
-            <input
-              v-model.number="form.price"
-              type="number"
-              min="0"
-              step="0.01"
-              class="input-inferno w-full px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label class="mb-1 block text-xs font-semibold text-neutral-400">Categoría</label>
-            <input v-model="form.category" class="input-inferno w-full px-3 py-2 text-sm" />
-          </div>
-        </div>
-
-        <div>
           <label class="mb-1 block text-xs font-semibold text-neutral-400">Video URL (opcional)</label>
-          <input v-model="form.video_url" type="url" class="input-inferno w-full px-3 py-2 text-sm" />
+          <input
+            v-model="form.video_url"
+            type="url"
+            class="input-inferno w-full px-3 py-2 text-sm"
+            placeholder="https://…"
+          />
         </div>
 
         <div class="flex gap-2 pt-2">

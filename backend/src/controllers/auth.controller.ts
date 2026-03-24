@@ -50,13 +50,20 @@ export const login = async (req: Request, res: Response) => {
     if (rows !== null) {
       const dbUser = rows[0]
       if (dbUser) {
-        const storedHash = dbUser.password_hash?.trim() ?? ''
+        // Solo recortar espacios/saltos accidentales del panel SQL; el hash en sí no lleva espacios internos.
+        const storedHash = (dbUser.password_hash ?? '').replace(/^\s+|\s+$/g, '')
+        if (!storedHash) {
+          console.warn('[auth] password_hash vacío en admin_users:', dbUser.email)
+          return sendError(res, 'Credenciales inválidas', 401)
+        }
         if (storedHash.length !== 60 || !storedHash.startsWith('$2')) {
-          console.warn(
-            '[auth] password_hash en admin_users parece truncado o inválido (len=%s, email=%s). En Railway usá Query con CONCAT(CHAR(36),...) como indica npm run hash-password.',
+          console.error(
+            '[auth] HASH_STORAGE_INVALID len=%d prefix=%s email=%s — bcrypt en MySQL debe ser 60 chars y empezar con $2. Usá Query + CONCAT(CHAR(36),...) (npm run hash-password / admin-bootstrap-sql).',
             storedHash.length,
+            JSON.stringify(storedHash.slice(0, 4)),
             dbUser.email,
           )
+          return sendError(res, 'Credenciales inválidas', 401)
         }
         const isValidPassword = await bcrypt.compare(password, storedHash)
         if (!isValidPassword) {
@@ -136,7 +143,12 @@ export const login = async (req: Request, res: Response) => {
       'Login exitoso',
     )
   } catch (error) {
-    console.error(error)
+    const e = error as { code?: string; errno?: number; message?: string }
+    if (e.code === 'ECONNREFUSED' || e.code === 'ETIMEDOUT' || e.code === 'ENOTFOUND') {
+      console.error('[auth] MySQL no alcanzable:', e.code, e.message)
+    } else {
+      console.error('[auth]', error)
+    }
     return sendError(res, 'No se pudo iniciar sesión', 500)
   }
 }

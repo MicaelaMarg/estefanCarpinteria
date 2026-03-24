@@ -29,7 +29,7 @@ function parseMysqlConnectionString(raw: string): {
   }
 }
 
-const databaseUrl = process.env.DATABASE_URL ?? process.env.MYSQL_URL ?? ''
+const databaseUrl = (process.env.DATABASE_URL ?? process.env.MYSQL_URL ?? '').trim()
 const fromUrl = databaseUrl ? parseMysqlConnectionString(databaseUrl) : null
 
 const dbHost =
@@ -42,24 +42,29 @@ const dbName =
   fromUrl?.database ?? process.env.MYSQLDATABASE ?? process.env.DB_NAME ?? 'carpinteria'
 
 const nodeEnv = process.env.NODE_ENV ?? 'development'
+const isRailway = Boolean(process.env.RAILWAY_ENVIRONMENT)
+/** En Railway NODE_ENV a veces no viene en production; igual necesitamos SSL al MySQL remoto. */
+const treatAsDeployed = nodeEnv === 'production' || isRailway
 const isLocalDb = dbHost === 'localhost' || dbHost === '127.0.0.1'
 const dbUseSsl =
-  process.env.DB_SSL === 'true' || (nodeEnv === 'production' && !isLocalDb && dbHost !== '')
+  process.env.DB_SSL === 'true' ||
+  (process.env.DB_SSL !== 'false' && treatAsDeployed && !isLocalDb && dbHost !== '')
 
 export const env = {
   port: Number(process.env.PORT ?? 4000),
   nodeEnv,
+  isRailway,
   dbHost,
   dbPort,
   dbUser,
   dbPassword,
   dbName,
   dbUseSsl,
-  jwtSecret: process.env.JWT_SECRET ?? 'dev-secret',
-  corsOrigin: process.env.CORS_ORIGIN ?? '*',
-  adminEmail: process.env.ADMIN_EMAIL ?? 'mattiuccimicaelammm@gmail.com',
+  jwtSecret: (process.env.JWT_SECRET ?? 'dev-secret').trim(),
+  corsOrigin: (process.env.CORS_ORIGIN ?? '*').trim(),
+  adminEmail: (process.env.ADMIN_EMAIL ?? 'mattiuccimicaelammm@gmail.com').trim(),
   adminPassword: process.env.ADMIN_PASSWORD ?? 'admin1234',
-  adminPasswordHash: process.env.ADMIN_PASSWORD_HASH ?? '',
+  adminPasswordHash: (process.env.ADMIN_PASSWORD_HASH ?? '').trim(),
   uploadDir: process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'uploads'),
   /** URL pública del backend (sin barra final), ej. https://api.xxx.railway.app — para URLs absolutas de uploads */
   publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? '').replace(/\/$/, ''),

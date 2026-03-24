@@ -23,9 +23,7 @@ const handleLogout = () => {
 </script>
 
 <template>
-  <header
-    class="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-deep-black/80 backdrop-blur-xl supports-[backdrop-filter]:bg-deep-black/65"
-  >
+  <header class="navbar-glass fixed inset-x-0 top-0 z-50">
     <div class="section-container flex items-center justify-between py-4">
       <RouterLink to="/" class="flex items-center gap-2 text-industrial-yellow">
         <span class="rounded-md bg-industrial-yellow px-2 py-1 font-black text-deep-black">EC</span>

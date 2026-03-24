@@ -4,24 +4,16 @@ import { RouterLink } from 'vue-router'
 defineProps<{
   title: string
   subtitle: string
-  mediaUrl: string
 }>()
 </script>
 
 <template>
   <section class="relative h-[78vh] min-h-[520px] w-full overflow-hidden">
-    <img
-      :src="mediaUrl"
-      :alt="title"
-      class="h-full w-full object-cover"
-      loading="eager"
-      decoding="async"
-      fetchpriority="high"
-    />
+    <!-- Sin foto: se ve el fondo fijo (madera + degradado) de App.vue -->
     <div
-      class="absolute inset-0 bg-gradient-to-t from-deep-black via-wood-ebony/70 to-wood-amber/20"
+      class="absolute inset-0 bg-gradient-to-t from-deep-black via-wood-ebony/75 to-wood-amber/15"
     />
-    <div class="absolute inset-0 bg-black/35" />
+    <div class="absolute inset-0 bg-black/30" />
 
     <div class="section-container absolute inset-0 flex flex-col items-start justify-center text-left">
       <p class="mb-4 rounded-full bg-industrial-yellow px-4 py-2 text-xs font-bold tracking-[0.16em] text-deep-black">

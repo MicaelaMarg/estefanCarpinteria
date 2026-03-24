@@ -7,6 +7,7 @@ import WhatsAppButton from './components/WhatsAppButton.vue'
 
 <template>
   <div class="relative isolate min-h-screen text-soft-white">
+    <div class="pointer-events-none fixed inset-0 -z-30 wood-bg-photo" aria-hidden="true" />
     <div class="pointer-events-none fixed inset-0 -z-20 inferno-gradient" aria-hidden="true" />
     <div class="pointer-events-none fixed inset-0 -z-10 inferno-noise" aria-hidden="true" />
     <Navbar />

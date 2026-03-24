@@ -39,19 +39,33 @@ body {
   min-height: 100vh;
 }
 
-/* Fondo fijo: degradado vertical en gama cálida + negro */
+/* Capa inferior: textura de añillos (public/wood-rings-bg.png) */
+.wood-bg-photo {
+  background-color: #2d1b10;
+  background-image: url('/wood-rings-bg.png');
+  background-position: center 35%;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+@media (min-width: 768px) {
+  .wood-bg-photo {
+    background-position: center center;
+  }
+}
+
+/* Veladura: arriba negro profundo → abajo se abre a marrones (foto de madera asoma más abajo) */
 .inferno-gradient {
   background: linear-gradient(
     180deg,
-    #f9d5b4 0%,
-    #f1c18d 14%,
-    #e5a662 28%,
-    #d28b46 40%,
-    #b06538 52%,
-    #8c4b27 64%,
-    #4d2e19 78%,
-    #2d1b10 90%,
-    #070707 100%
+    rgba(4, 4, 4, 0.94) 0%,
+    rgba(8, 6, 5, 0.9) 18%,
+    rgba(18, 11, 8, 0.82) 32%,
+    rgba(45, 27, 16, 0.72) 48%,
+    rgba(77, 46, 25, 0.62) 62%,
+    rgba(120, 68, 38, 0.52) 76%,
+    rgba(176, 101, 56, 0.42) 88%,
+    rgba(210, 139, 70, 0.36) 100%
   );
 }
 
@@ -59,6 +73,22 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
   background-repeat: repeat;
   mix-blend-mode: overlay;
+  opacity: 0.55;
+}
+
+/* Menú: vidrio marrón muy oscuro, leve matiz rojizo */
+.navbar-glass {
+  background-color: rgba(32, 14, 12, 0.94);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  border-bottom: 1px solid rgba(200, 120, 100, 0.18);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .navbar-glass {
+    background-color: rgba(32, 14, 12, 0.82);
+  }
 }
 
 .section-container {
