@@ -1,5 +1,6 @@
 import type { Response } from 'express'
 import type { ResultSetHeader, RowDataPacket } from 'mysql2'
+import { logMysqlError } from '../db/mysqlError.js'
 import { pool } from '../db/pool.js'
 import type { AuthRequest } from '../middleware/auth.middleware.js'
 import type { Product } from '../types/api.js'
@@ -12,7 +13,7 @@ interface CountRow extends RowDataPacket {
 /** Mensaje y status HTTP según error de mysql2 al listar productos */
 function listProductsErrorResponse(error: unknown): { status: number; message: string } {
   const e = error as { code?: string; errno?: number; sqlMessage?: string }
-  console.error('[admin-products] list:', e.code, e.errno, e.sqlMessage ?? error)
+  logMysqlError('listAdminProducts', error)
 
   if (e.errno === 1146 || e.code === 'ER_NO_SUCH_TABLE') {
     return {
