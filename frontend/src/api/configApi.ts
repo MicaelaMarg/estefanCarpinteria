@@ -19,6 +19,21 @@ configApi.interceptors.request.use((config) => {
 configApi.interceptors.response.use(
   (response) => response,
   (error) => {
+    const status = error.response?.status
+    const url = String(error.config?.url ?? '')
+    const isLoginPost = url.includes('/auth/login') && error.config?.method?.toLowerCase() === 'post'
+
+    if (status === 401 && !isLoginPost) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      toast.error('Sesión expirada o no válida. Iniciá sesión de nuevo.')
+      if (!window.location.pathname.startsWith('/login')) {
+        const back = `${window.location.pathname}${window.location.search}`
+        window.location.assign(`/login?redirect=${encodeURIComponent(back)}`)
+      }
+      return Promise.reject(error)
+    }
+
     const message = error.response?.data?.message ?? 'Ocurrio un error inesperado'
     toast.error(message)
     return Promise.reject(error)

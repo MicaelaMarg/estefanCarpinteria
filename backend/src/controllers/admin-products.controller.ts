@@ -9,6 +9,37 @@ interface CountRow extends RowDataPacket {
   total: number
 }
 
+/** Mensaje y status HTTP según error de mysql2 al listar productos */
+function listProductsErrorResponse(error: unknown): { status: number; message: string } {
+  const e = error as { code?: string; errno?: number; sqlMessage?: string }
+  console.error('[admin-products] list:', e.code, e.errno, e.sqlMessage ?? error)
+
+  if (e.errno === 1146 || e.code === 'ER_NO_SUCH_TABLE') {
+    return {
+      status: 500,
+      message:
+        'La tabla products no existe en MySQL. En Railway: ejecutá schema.sql y migraciones (001, 002, …) en el plugin MySQL → Query.',
+    }
+  }
+  if (
+    e.code === 'ECONNREFUSED' ||
+    e.code === 'ETIMEDOUT' ||
+    e.code === 'ENOTFOUND' ||
+    e.code === 'PROTOCOL_CONNECTION_LOST'
+  ) {
+    return {
+      status: 503,
+      message:
+        'No se pudo conectar a MySQL. Revisá que el servicio MySQL esté arriba y las variables DATABASE_URL / MYSQL* en el backend.',
+    }
+  }
+  return {
+    status: 500,
+    message:
+      'No se pudieron listar los productos (error en la base de datos). Mirá los logs del servicio backend en Railway para el detalle.',
+  }
+}
+
 const parsePositiveNumber = (value: unknown, fallback: number) => {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
@@ -171,8 +202,8 @@ export const listAdminProducts = async (req: AuthRequest, res: Response) => {
 
     return sendSuccess(res, rows, total)
   } catch (error) {
-    console.error(error)
-    return sendError(res, 'No se pudieron listar los productos', 500)
+    const { status, message } = listProductsErrorResponse(error)
+    return sendError(res, message, status)
   }
 }
 
