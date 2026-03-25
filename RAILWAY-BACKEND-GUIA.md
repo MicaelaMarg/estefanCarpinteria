@@ -143,7 +143,7 @@ curl -s https://TU-BACKEND/api/admin/products?page=1&limit=5 \
 | `MERCADOPAGO_NOTIFICATION_URL` | (Opcional) URL completa del webhook si necesitás enviarla en la preferencia a mano. |
 | `SHIPPING_DELIVERY_PRICE_ARS` | Precio fijo del envío a domicilio en pesos (default 8000 si no está definido). |
 
-**Base de datos:** en **MySQL → Database → Data**, pegá y ejecutá el SQL en orden: `005_orders_mercadopago.sql`, luego **`006_order_shipping.sql`** (obligatoria antes de la 007), después **`007_order_shipping_contact.sql`**. Si la 007 falla con *Unknown column shipping_cost*, es porque falta la **006**; alternativa: un solo archivo **`006_and_007_orders_shipping_combined.sql`**. O usá el `schema.sql` completo en bases nuevas.
+**Base de datos:** en **MySQL → Database → Data**: `005_orders_mercadopago.sql` si aplica; luego **`006_order_shipping.sql`** si aún no tenés `shipping_method` / `shipping_cost`. Después **`007_order_shipping_contact.sql`** (datos de envío). **No** ejecutes **`006_and_007_orders_shipping_combined.sql`** si la 006 ya está aplicada (MySQL dirá columna duplicada). El combined es solo para quien no corrió nunca la 006. O usá `schema.sql` en bases nuevas.
 
 **Panel Mercado Pago:** configurá **Webhooks** con `https://TU-API/api/webhook`. El checkout **no** duplica esa URL en la preferencia por defecto; las notificaciones siguen llegando a la URL del panel.
 

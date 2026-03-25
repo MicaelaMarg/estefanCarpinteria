@@ -1,6 +1,6 @@
--- Todo en uno: envío (006) + datos de contacto (007).
--- Usalo si todavía NO corriste la 006 (error "Unknown column shipping_cost" al ejecutar solo la 007).
--- Si ya corriste la 006, usá solo 007_order_shipping_contact.sql (o las columnas de contacto sin AFTER).
+-- ⚠️ SOLO si NUNCA corriste la 006 (no tenés shipping_method / shipping_cost en orders).
+-- Si la 006 YA la ejecutaste antes, NO uses este archivo → error "Duplicate column".
+-- En ese caso ejecutá únicamente: 007_order_shipping_contact.sql
 
 ALTER TABLE orders
   ADD COLUMN shipping_method VARCHAR(32) NOT NULL DEFAULT 'pickup' COMMENT 'pickup | delivery' AFTER currency_id,
