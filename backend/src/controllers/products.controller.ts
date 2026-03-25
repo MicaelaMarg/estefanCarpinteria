@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import type { RowDataPacket } from 'mysql2'
+import { logMysqlError } from '../db/mysqlError.js'
 import { pool } from '../db/pool.js'
 import type { Product } from '../types/api.js'
 import { sendError, sendSuccess } from '../utils/response.js'
@@ -11,6 +12,36 @@ interface CountRow extends RowDataPacket {
 const parsePositiveNumber = (value: unknown, fallback: number) => {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+function productsQueryErrorResponse(error: unknown): { status: number; message: string } {
+  const e = error as { code?: string; errno?: number; sqlMessage?: string }
+  logMysqlError('getProducts / getProductById', error)
+
+  if (e.errno === 1054 || e.code === 'ER_BAD_FIELD_ERROR') {
+    return {
+      status: 500,
+      message:
+        'La tabla products no tiene las columnas esperadas (p. ej. stock_cargado, stock_disponible). En Railway MySQL ejecutá la migración 002_add_product_stock.sql o el ALTER del repo.',
+    }
+  }
+  if (e.errno === 1146 || e.code === 'ER_NO_SUCH_TABLE') {
+    return {
+      status: 500,
+      message: 'La tabla products no existe. Ejecutá backend/sql/schema.sql en MySQL.',
+    }
+  }
+  if (
+    e.code === 'ECONNREFUSED' ||
+    e.code === 'ETIMEDOUT' ||
+    e.code === 'PROTOCOL_CONNECTION_LOST'
+  ) {
+    return { status: 503, message: 'Sin conexión a MySQL. Reintentá más tarde.' }
+  }
+  return {
+    status: 500,
+    message: 'No se pudieron obtener los productos. Revisá logs del backend en Railway.',
+  }
 }
 
 export const getProducts = async (req: Request, res: Response) => {
@@ -64,8 +95,8 @@ export const getProducts = async (req: Request, res: Response) => {
 
     return sendSuccess(res, rows, total)
   } catch (error) {
-    console.error(error)
-    return sendError(res, 'No se pudieron obtener los productos', 500)
+    const { status, message } = productsQueryErrorResponse(error)
+    return sendError(res, message, status)
   }
 }
 
@@ -85,7 +116,7 @@ export const getProductById = async (req: Request, res: Response) => {
 
     return sendSuccess(res, product, 1)
   } catch (error) {
-    console.error(error)
-    return sendError(res, 'No se pudo obtener el producto', 500)
+    const { status, message } = productsQueryErrorResponse(error)
+    return sendError(res, message, status)
   }
 }
