@@ -7,6 +7,41 @@ import { sendError, sendSuccess } from '../utils/response.js'
 import { resolveMercadoPagoNotificationUrl } from '../utils/mpNotificationUrl.js'
 import { unknownErrorMessage } from '../utils/unknownErrorMessage.js'
 
+export type ShippingMode = 'pickup' | 'delivery'
+
+function parseShippingMode(body: unknown): ShippingMode {
+  if (!body || typeof body !== 'object') return 'pickup'
+  const s = (body as { shipping?: unknown }).shipping
+  if (s === 'delivery') return 'delivery'
+  return 'pickup'
+}
+
+export const getShippingOptions = (_req: Request, res: Response) => {
+  const deliveryPrice = env.shippingDeliveryPriceArs
+  return sendSuccess(
+    res,
+    {
+      modes: [
+        {
+          id: 'pickup' as const,
+          label: 'Retiro en taller',
+          price: 0,
+          description: 'Coordinás la retirada cuando el pago esté acreditado.',
+        },
+        {
+          id: 'delivery' as const,
+          label: 'Envío a domicilio',
+          price: deliveryPrice,
+          description:
+            'Costo fijo según zona; nos contactamos para coordinar fecha y dirección.',
+        },
+      ],
+    },
+    2,
+    '',
+  )
+}
+
 interface CartBodyItem {
   id?: unknown
   quantity?: unknown
@@ -59,8 +94,11 @@ export const postCheckout = async (req: Request, res: Response) => {
 
   const parsed = parseCartItems(req.body)
   if (!parsed) {
-    return sendError(res, 'Carrito inválido: enviá { items: [{ id, quantity }] }', 400)
+    return sendError(res, 'Carrito inválido: enviá { items: [{ id, quantity }], shipping?: "pickup"|"delivery" }', 400)
   }
+
+  const shippingMode = parseShippingMode(req.body)
+  const shippingCost = shippingMode === 'delivery' ? env.shippingDeliveryPriceArs : 0
 
   const merged = new Map<number, number>()
   for (const line of parsed) {
@@ -128,9 +166,12 @@ export const postCheckout = async (req: Request, res: Response) => {
       })
     }
 
+    totalAmount += shippingCost
+
     const [orderResult] = await conn.query<ResultSetHeader>(
-      `INSERT INTO orders (status, total_amount, currency_id) VALUES ('pending', ?, 'ARS')`,
-      [totalAmount.toFixed(2)],
+      `INSERT INTO orders (status, total_amount, currency_id, shipping_method, shipping_cost)
+       VALUES ('pending', ?, 'ARS', ?, ?)`,
+      [totalAmount.toFixed(2), shippingMode, shippingCost.toFixed(2)],
     )
     const orderId = orderResult.insertId
 
@@ -161,16 +202,28 @@ export const postCheckout = async (req: Request, res: Response) => {
     let initPoint: string | undefined
 
     try {
+      const mpItems = lines.map((line) => ({
+        id: String(line.productId),
+        title: line.title,
+        quantity: line.quantity,
+        unit_price: line.unitPrice,
+        currency_id: 'ARS',
+        ...(line.picture ? { picture_url: line.picture } : {}),
+      }))
+
+      if (shippingCost > 0) {
+        mpItems.push({
+          id: 'ENVIO',
+          title: 'Envío a domicilio',
+          quantity: 1,
+          unit_price: shippingCost,
+          currency_id: 'ARS',
+        })
+      }
+
       const pref = await preferenceApi.create({
         body: {
-          items: lines.map((line) => ({
-            id: String(line.productId),
-            title: line.title,
-            quantity: line.quantity,
-            unit_price: line.unitPrice,
-            currency_id: 'ARS',
-            ...(line.picture ? { picture_url: line.picture } : {}),
-          })),
+          items: mpItems,
           external_reference: String(orderId),
           back_urls: {
             success: `${base}/pago/exito`,

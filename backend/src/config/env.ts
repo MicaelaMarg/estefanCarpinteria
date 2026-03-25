@@ -98,6 +98,11 @@ export const env = {
   /** URL pública del frontend (sin barra final) — back_urls de Mercado Pago */
   publicFrontendUrl: resolvePublicFrontendUrl(),
   mercadopagoAccessToken: (process.env.MERCADOPAGO_ACCESS_TOKEN ?? '').trim(),
+  /** Precio fijo envío a domicilio (ARS), solo si el cliente elige delivery. */
+  shippingDeliveryPriceArs: Math.max(
+    0,
+    Number(process.env.SHIPPING_DELIVERY_PRICE_ARS ?? 8000) || 0,
+  ),
 }
 
 export function toPublicAssetUrl(assetPath: string): string {

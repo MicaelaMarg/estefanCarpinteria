@@ -1,8 +1,9 @@
 import { Router } from 'express'
-import { postCheckout } from '../controllers/checkout.controller.js'
+import { getShippingOptions, postCheckout } from '../controllers/checkout.controller.js'
 
 const checkoutRouter = Router()
 
+checkoutRouter.get('/shipping', getShippingOptions)
 checkoutRouter.post('/', postCheckout)
 
 export default checkoutRouter

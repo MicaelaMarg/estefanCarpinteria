@@ -141,8 +141,9 @@ curl -s https://TU-BACKEND/api/admin/products?page=1&limit=5 \
 | `CORS_ORIGIN` | Incluí la URL del front para que el navegador pueda llamar `POST /api/checkout`. |
 | `MERCADOPAGO_SEND_NOTIFICATION_URL` | Solo `true` si querés forzar `notification_url` en la preferencia con `{PUBLIC_BASE_URL}/api/webhook`. Por defecto el código **no** la envía y MP usa la URL de **Webhooks** del panel (evita errores tipo “notification_url invalid”). |
 | `MERCADOPAGO_NOTIFICATION_URL` | (Opcional) URL completa del webhook si necesitás enviarla en la preferencia a mano. |
+| `SHIPPING_DELIVERY_PRICE_ARS` | Precio fijo del envío a domicilio en pesos (default 8000 si no está definido). |
 
-**Base de datos:** ejecutá `backend/sql/migrations/005_orders_mercadopago.sql` en el mismo MySQL que usa el backend (o el `schema.sql` actualizado).
+**Base de datos:** ejecutá las migraciones en orden, p. ej. `005_orders_mercadopago.sql` y **`006_order_shipping.sql`** (columnas `shipping_method` / `shipping_cost` en `orders`), o el `schema.sql` actualizado.
 
 **Panel Mercado Pago:** configurá **Webhooks** con `https://TU-API/api/webhook`. El checkout **no** duplica esa URL en la preferencia por defecto; las notificaciones siguen llegando a la URL del panel.
 

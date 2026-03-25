@@ -1,19 +1,39 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { postCheckout } from '../api/checkout'
+import { getShippingOptions, postCheckout, type ShippingMode, type ShippingModeOption } from '../api/checkout'
 import { useCartStore } from '../stores/cart'
 import { resolveMediaUrl } from '../utils/mediaUrl'
 
 const cart = useCartStore()
 const paying = ref(false)
+const shippingModes = ref<ShippingModeOption[]>([
+  { id: 'pickup', label: 'Retiro en taller', price: 0, description: '' },
+])
+const shipping = ref<ShippingMode>('pickup')
+
+onMounted(async () => {
+  try {
+    const { modes } = await getShippingOptions()
+    if (modes?.length) shippingModes.value = modes
+  } catch {
+    /* fallback: solo retiro */
+  }
+})
+
+const shippingPrice = computed(() => {
+  const m = shippingModes.value.find((x) => x.id === shipping.value)
+  return m?.price ?? 0
+})
+
+const grandTotal = computed(() => cart.total + shippingPrice.value)
 
 async function goToMercadoPago() {
   if (cart.lines.length === 0) return
   paying.value = true
   try {
     const items = cart.lines.map((l) => ({ id: l.productId, quantity: l.quantity }))
-    const { init_point } = await postCheckout(items)
+    const { init_point } = await postCheckout(items, shipping.value)
     window.location.href = init_point
   } catch {
     /* toast vía interceptor */
@@ -85,9 +105,41 @@ async function goToMercadoPago() {
       </ul>
 
       <aside class="card-soft h-fit space-y-4 p-6">
-        <p class="text-sm text-neutral-400">Total estimado (frontend)</p>
+        <div class="space-y-3 border-b border-white/10 pb-4">
+          <p class="text-sm font-semibold text-soft-white">Entrega</p>
+          <label
+            v-for="mode in shippingModes"
+            :key="mode.id"
+            class="flex cursor-pointer gap-3 rounded-lg border border-white/15 p-3 transition-colors has-[:checked]:border-industrial-yellow has-[:checked]:bg-white/5"
+          >
+            <input
+              v-model="shipping"
+              type="radio"
+              name="shipping"
+              :value="mode.id"
+              class="mt-1 accent-industrial-yellow"
+            />
+            <span class="min-w-0 text-sm">
+              <span class="font-semibold text-soft-white">{{ mode.label }}</span>
+              <span v-if="mode.price > 0" class="ml-2 text-industrial-yellow">
+                + ${{ mode.price.toLocaleString('es-AR') }}
+              </span>
+              <span v-if="mode.description" class="mt-1 block text-xs text-neutral-400">
+                {{ mode.description }}
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <p class="text-sm text-neutral-400">Subtotal productos</p>
+        <p class="text-lg font-bold text-soft-white">${{ cart.total.toLocaleString('es-AR') }}</p>
+        <p v-if="shippingPrice > 0" class="text-sm text-neutral-400">
+          Envío
+          <span class="font-semibold text-soft-white"> +${{ shippingPrice.toLocaleString('es-AR') }} </span>
+        </p>
+        <p class="text-sm text-neutral-400">Total estimado</p>
         <p class="text-2xl font-black text-industrial-yellow">
-          ${{ cart.total.toLocaleString('es-AR') }}
+          ${{ grandTotal.toLocaleString('es-AR') }}
         </p>
         <button
           type="button"
