@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express'
+import type { PoolConnection } from 'mysql2/promise'
 import type { ResultSetHeader, RowDataPacket } from 'mysql2'
 import { env, toPublicAssetUrl } from '../config/env.js'
 import { pool } from '../db/pool.js'
@@ -58,6 +59,38 @@ interface ProductRow extends RowDataPacket {
 const MAX_LINES = 40
 const MAX_QTY = 99
 
+function isMissingColumnError(e: unknown): boolean {
+  const err = e as { errno?: number; code?: string }
+  return err.errno === 1054 || err.code === 'ER_BAD_FIELD_ERROR'
+}
+
+/** Inserta pedido pending; si falta migración 006, usa columnas viejas y conserva total_amount (incluye envío). */
+async function insertPendingOrder(
+  conn: PoolConnection,
+  totalAmount: number,
+  shippingMode: ShippingMode,
+  shippingCost: number,
+): Promise<number> {
+  try {
+    const [r] = (await conn.query(
+      `INSERT INTO orders (status, total_amount, currency_id, shipping_method, shipping_cost)
+       VALUES ('pending', ?, 'ARS', ?, ?)`,
+      [totalAmount.toFixed(2), shippingMode, shippingCost.toFixed(2)],
+    )) as [ResultSetHeader, unknown]
+    return r.insertId
+  } catch (e) {
+    if (!isMissingColumnError(e)) throw e
+    console.warn(
+      '[checkout] Tabla orders sin shipping_method/shipping_cost. Corré sql/migrations/006_order_shipping.sql',
+    )
+    const [r2] = (await conn.query(
+      `INSERT INTO orders (status, total_amount, currency_id) VALUES ('pending', ?, 'ARS')`,
+      [totalAmount.toFixed(2)],
+    )) as [ResultSetHeader, unknown]
+    return r2.insertId
+  }
+}
+
 function parseCartItems(body: unknown): { id: number; quantity: number }[] | null {
   if (!body || typeof body !== 'object' || !('items' in body)) return null
   const items = (body as { items: unknown }).items
@@ -98,7 +131,8 @@ export const postCheckout = async (req: Request, res: Response) => {
   }
 
   const shippingMode = parseShippingMode(req.body)
-  const shippingCost = shippingMode === 'delivery' ? env.shippingDeliveryPriceArs : 0
+  const rawShip = shippingMode === 'delivery' ? env.shippingDeliveryPriceArs : 0
+  const shippingCost = Number.isFinite(rawShip) && rawShip >= 0 ? rawShip : 0
 
   const merged = new Map<number, number>()
   for (const line of parsed) {
@@ -168,12 +202,12 @@ export const postCheckout = async (req: Request, res: Response) => {
 
     totalAmount += shippingCost
 
-    const [orderResult] = await conn.query<ResultSetHeader>(
-      `INSERT INTO orders (status, total_amount, currency_id, shipping_method, shipping_cost)
-       VALUES ('pending', ?, 'ARS', ?, ?)`,
-      [totalAmount.toFixed(2), shippingMode, shippingCost.toFixed(2)],
-    )
-    const orderId = orderResult.insertId
+    if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+      await conn.rollback()
+      return sendError(res, 'Total del pedido inválido', 500)
+    }
+
+    const orderId = await insertPendingOrder(conn, totalAmount, shippingMode, shippingCost)
 
     for (const line of lines) {
       await conn.query(
@@ -262,7 +296,15 @@ export const postCheckout = async (req: Request, res: Response) => {
     )
   } catch (e) {
     await conn.rollback()
-    console.error('[checkout]', e)
+    const err = e as { errno?: number; code?: string; sqlMessage?: string }
+    console.error('[checkout]', err.code, err.errno, err.sqlMessage ?? e)
+    if (isMissingColumnError(e)) {
+      return sendError(
+        res,
+        'Falta migración SQL: ejecutá backend/sql/migrations/006_order_shipping.sql en MySQL.',
+        503,
+      )
+    }
     return sendError(res, 'Error al crear el pedido', 500)
   } finally {
     conn.release()
