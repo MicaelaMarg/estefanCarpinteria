@@ -1,12 +1,22 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { getShippingOptions, postCheckout, type ShippingMode, type ShippingModeOption } from '../api/checkout'
+import { toast } from 'vue3-toastify'
+import {
+  getShippingOptions,
+  postCheckout,
+  type ShippingMode,
+  type ShippingModeOption,
+} from '../api/checkout'
 import { useCartStore } from '../stores/cart'
 import { resolveMediaUrl } from '../utils/mediaUrl'
 
 const cart = useCartStore()
 const paying = ref(false)
+const deliveryName = ref('')
+const deliveryPhone = ref('')
+const deliveryAddress = ref('')
+const deliveryNotes = ref('')
 const shippingModes = ref<ShippingModeOption[]>([
   { id: 'pickup', label: 'Retiro en taller', price: 0, description: '' },
 ])
@@ -30,10 +40,30 @@ const grandTotal = computed(() => cart.total + shippingPrice.value)
 
 async function goToMercadoPago() {
   if (cart.lines.length === 0) return
+  if (shipping.value === 'delivery') {
+    const digits = deliveryPhone.value.replace(/\D/g, '')
+    if (digits.length < 6) {
+      toast.error('Indicá un teléfono de contacto para el envío.')
+      return
+    }
+    if (deliveryAddress.value.trim().length < 8) {
+      toast.error('Indicá la dirección completa (calle, número y localidad).')
+      return
+    }
+  }
   paying.value = true
   try {
     const items = cart.lines.map((l) => ({ id: l.productId, quantity: l.quantity }))
-    const { init_point } = await postCheckout(items, shipping.value)
+    const details =
+      shipping.value === 'delivery'
+        ? {
+            contact_name: deliveryName.value.trim() || undefined,
+            phone: deliveryPhone.value.trim(),
+            address: deliveryAddress.value.trim(),
+            notes: deliveryNotes.value.trim() || undefined,
+          }
+        : undefined
+    const { init_point } = await postCheckout(items, shipping.value, details)
     window.location.href = init_point
   } catch {
     /* toast vía interceptor */
@@ -59,7 +89,7 @@ async function goToMercadoPago() {
       </RouterLink>
     </div>
 
-    <div v-else class="grid gap-8 lg:grid-cols-[1fr_320px]">
+    <div v-else class="grid gap-8 lg:grid-cols-[1fr_minmax(300px,420px)]">
       <ul class="space-y-4">
         <li
           v-for="line in cart.lines"
@@ -128,6 +158,51 @@ async function goToMercadoPago() {
                 {{ mode.description }}
               </span>
             </span>
+          </label>
+        </div>
+
+        <div
+          v-if="shipping === 'delivery'"
+          class="space-y-3 border-b border-white/10 pb-4"
+        >
+          <p class="text-sm font-semibold text-soft-white">Datos del envío</p>
+          <label class="block text-xs text-neutral-400">
+            Nombre y apellido (opcional)
+            <input
+              v-model="deliveryName"
+              type="text"
+              autocomplete="name"
+              class="input-inferno mt-1 w-full px-3 py-2 text-sm text-soft-white"
+              placeholder="Quien recibe"
+            />
+          </label>
+          <label class="block text-xs text-neutral-400">
+            Teléfono <span class="text-inferno-red">*</span>
+            <input
+              v-model="deliveryPhone"
+              type="tel"
+              autocomplete="tel"
+              class="input-inferno mt-1 w-full px-3 py-2 text-sm text-soft-white"
+              placeholder="Ej. 11 2345-6789"
+            />
+          </label>
+          <label class="block text-xs text-neutral-400">
+            Dirección completa <span class="text-inferno-red">*</span>
+            <textarea
+              v-model="deliveryAddress"
+              rows="3"
+              class="input-inferno mt-1 w-full resize-y px-3 py-2 text-sm text-soft-white"
+              placeholder="Calle, número, piso/depto, barrio, CP, localidad"
+            />
+          </label>
+          <label class="block text-xs text-neutral-400">
+            Observaciones (opcional)
+            <input
+              v-model="deliveryNotes"
+              type="text"
+              class="input-inferno mt-1 w-full px-3 py-2 text-sm text-soft-white"
+              placeholder="Horario, referencias, etc."
+            />
           </label>
         </div>
 

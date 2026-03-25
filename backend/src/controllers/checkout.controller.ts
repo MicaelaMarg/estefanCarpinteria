@@ -64,31 +64,101 @@ function isMissingColumnError(e: unknown): boolean {
   return err.errno === 1054 || err.code === 'ER_BAD_FIELD_ERROR'
 }
 
-/** Inserta pedido pending; si falta migración 006, usa columnas viejas y conserva total_amount (incluye envío). */
+interface ParsedShippingDetails {
+  contactName: string | null
+  phone: string | null
+  address: string | null
+  notes: string | null
+}
+
+function parseShippingDetails(body: unknown): ParsedShippingDetails {
+  const empty: ParsedShippingDetails = {
+    contactName: null,
+    phone: null,
+    address: null,
+    notes: null,
+  }
+  if (!body || typeof body !== 'object') return empty
+  const sd = (body as { shipping_details?: unknown }).shipping_details
+  if (!sd || typeof sd !== 'object') return empty
+  const o = sd as Record<string, unknown>
+  const clip = (v: unknown, max: number): string | null => {
+    const t = String(v ?? '').trim()
+    if (!t) return null
+    return t.slice(0, max)
+  }
+  return {
+    contactName: clip(o.contact_name, 180),
+    phone: clip(o.phone, 40),
+    address: clip(o.address, 4000),
+    notes: clip(o.notes, 500),
+  }
+}
+
+function buildPreferenceAdditionalInfo(
+  shippingMode: ShippingMode,
+  d: ParsedShippingDetails,
+): string | undefined {
+  if (shippingMode !== 'delivery') return undefined
+  const parts = [
+    d.contactName ? `Nombre: ${d.contactName}` : null,
+    d.phone ? `Tel: ${d.phone}` : null,
+    d.address ? `Envío: ${d.address}` : null,
+    d.notes ? `Notas: ${d.notes}` : null,
+  ].filter(Boolean) as string[]
+  if (parts.length === 0) return undefined
+  const s = parts.join(' | ')
+  return s.length > 500 ? `${s.slice(0, 497)}…` : s
+}
+
+/** Inserta pedido pending; reintenta con menos columnas si faltan migraciones 006/007. */
 async function insertPendingOrder(
   conn: PoolConnection,
-  totalAmount: number,
-  shippingMode: ShippingMode,
-  shippingCost: number,
+  params: {
+    totalAmount: number
+    shippingMode: ShippingMode
+    shippingCost: number
+    details: ParsedShippingDetails
+  },
 ): Promise<number> {
-  try {
-    const [r] = (await conn.query(
-      `INSERT INTO orders (status, total_amount, currency_id, shipping_method, shipping_cost)
-       VALUES ('pending', ?, 'ARS', ?, ?)`,
-      [totalAmount.toFixed(2), shippingMode, shippingCost.toFixed(2)],
-    )) as [ResultSetHeader, unknown]
-    return r.insertId
-  } catch (e) {
-    if (!isMissingColumnError(e)) throw e
-    console.warn(
-      '[checkout] Tabla orders sin shipping_method/shipping_cost. Corré sql/migrations/006_order_shipping.sql',
-    )
-    const [r2] = (await conn.query(
-      `INSERT INTO orders (status, total_amount, currency_id) VALUES ('pending', ?, 'ARS')`,
-      [totalAmount.toFixed(2)],
-    )) as [ResultSetHeader, unknown]
-    return r2.insertId
+  const { totalAmount, shippingMode, shippingCost, details } = params
+  const t = totalAmount.toFixed(2)
+  const sc = shippingCost.toFixed(2)
+  const { contactName, phone, address, notes } = details
+
+  const attempts: { sql: string; args: Array<string | null> }[] = [
+    {
+      sql: `INSERT INTO orders (status, total_amount, currency_id, shipping_method, shipping_cost, shipping_contact_name, shipping_phone, shipping_address, shipping_notes)
+            VALUES ('pending', ?, 'ARS', ?, ?, ?, ?, ?, ?)`,
+      args: [t, shippingMode, sc, contactName, phone, address, notes],
+    },
+    {
+      sql: `INSERT INTO orders (status, total_amount, currency_id, shipping_method, shipping_cost) VALUES ('pending', ?, 'ARS', ?, ?)`,
+      args: [t, shippingMode, sc],
+    },
+    {
+      sql: `INSERT INTO orders (status, total_amount, currency_id) VALUES ('pending', ?, 'ARS')`,
+      args: [t],
+    },
+  ]
+
+  let lastErr: unknown
+  for (let i = 0; i < attempts.length; i++) {
+    const a = attempts[i]!
+    try {
+      const [r] = (await conn.query(a.sql, a.args)) as [ResultSetHeader, unknown]
+      if (i > 0) {
+        console.warn(
+          `[checkout] INSERT orders nivel ${i + 1}/${attempts.length}; corré migraciones 006/007 para datos de envío completos`,
+        )
+      }
+      return r.insertId
+    } catch (e) {
+      if (!isMissingColumnError(e)) throw e
+      lastErr = e
+    }
   }
+  throw lastErr
 }
 
 function parseCartItems(body: unknown): { id: number; quantity: number }[] | null {
@@ -127,10 +197,25 @@ export const postCheckout = async (req: Request, res: Response) => {
 
   const parsed = parseCartItems(req.body)
   if (!parsed) {
-    return sendError(res, 'Carrito inválido: enviá { items: [{ id, quantity }], shipping?: "pickup"|"delivery" }', 400)
+    return sendError(
+      res,
+      'Carrito inválido: items, shipping y si es delivery shipping_details (teléfono y dirección)',
+      400,
+    )
   }
 
   const shippingMode = parseShippingMode(req.body)
+  const shippingDetails = parseShippingDetails(req.body)
+
+  if (shippingMode === 'delivery') {
+    if (!shippingDetails.phone || shippingDetails.phone.replace(/\D/g, '').length < 6) {
+      return sendError(res, 'Para envío a domicilio indicá un teléfono de contacto válido', 400)
+    }
+    if (!shippingDetails.address || shippingDetails.address.length < 8) {
+      return sendError(res, 'Para envío a domicilio indicá la dirección completa (calle, número, localidad)', 400)
+    }
+  }
+
   const rawShip = shippingMode === 'delivery' ? env.shippingDeliveryPriceArs : 0
   const shippingCost = Number.isFinite(rawShip) && rawShip >= 0 ? rawShip : 0
 
@@ -207,7 +292,12 @@ export const postCheckout = async (req: Request, res: Response) => {
       return sendError(res, 'Total del pedido inválido', 500)
     }
 
-    const orderId = await insertPendingOrder(conn, totalAmount, shippingMode, shippingCost)
+    const orderId = await insertPendingOrder(conn, {
+      totalAmount,
+      shippingMode,
+      shippingCost,
+      details: shippingDetails,
+    })
 
     for (const line of lines) {
       await conn.query(
@@ -255,9 +345,12 @@ export const postCheckout = async (req: Request, res: Response) => {
         })
       }
 
+      const additionalInfo = buildPreferenceAdditionalInfo(shippingMode, shippingDetails)
+
       const pref = await preferenceApi.create({
         body: {
           items: mpItems,
+          ...(additionalInfo ? { additional_info: additionalInfo } : {}),
           external_reference: String(orderId),
           back_urls: {
             success: `${base}/pago/exito`,

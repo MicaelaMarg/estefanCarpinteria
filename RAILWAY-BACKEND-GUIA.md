@@ -143,7 +143,7 @@ curl -s https://TU-BACKEND/api/admin/products?page=1&limit=5 \
 | `MERCADOPAGO_NOTIFICATION_URL` | (Opcional) URL completa del webhook si necesitás enviarla en la preferencia a mano. |
 | `SHIPPING_DELIVERY_PRICE_ARS` | Precio fijo del envío a domicilio en pesos (default 8000 si no está definido). |
 
-**Base de datos:** ejecutá las migraciones en orden, p. ej. `005_orders_mercadopago.sql` y **`006_order_shipping.sql`** (columnas `shipping_method` / `shipping_cost` en `orders`), o el `schema.sql` actualizado.
+**Base de datos:** en **MySQL → Database → Data**, pegá y ejecutá el SQL de cada migración en orden: `005_orders_mercadopago.sql`, **`006_order_shipping.sql`**, **`007_order_shipping_contact.sql`** (datos de envío: nombre, teléfono, dirección). O usá el `schema.sql` completo en instalaciones nuevas.
 
 **Panel Mercado Pago:** configurá **Webhooks** con `https://TU-API/api/webhook`. El checkout **no** duplica esa URL en la preferencia por defecto; las notificaciones siguen llegando a la URL del panel.
 
