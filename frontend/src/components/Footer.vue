@@ -9,7 +9,6 @@ const route = useRoute()
 const { isAuthenticated } = useAuth()
 
 const isAdminPage = computed(() => route.path.startsWith('/admin'))
-const showAdminStrip = computed(() => isAuthenticated.value || isAdminPage.value)
 
 const year = new Date().getFullYear()
 
@@ -124,28 +123,33 @@ const mailHref = `mailto:${EMAIL}?subject=Consulta%20muebles%20a%20medida`
         </div>
       </div>
 
-      <!-- Admin: solo staff logueado o vista panel (no expuesto al visitante) -->
-      <div
-        v-if="showAdminStrip"
-        class="mt-10 border-t border-white/10 pt-8"
-      >
-        <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-600">Equipo</p>
-        <div class="mt-3 flex flex-wrap gap-3">
+      <!-- Panel: en /admin solo “volver”; en la tienda, login discreto o abrir panel si ya hay sesión -->
+      <div class="mt-10 border-t border-white/10 pt-8">
+        <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-600">Taller</p>
+        <div class="mt-3 flex flex-wrap items-center gap-3">
           <RouterLink
             v-if="isAdminPage"
             to="/"
-            class="rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold text-neutral-400 transition hover:border-industrial-yellow/40 hover:text-industrial-yellow"
+            class="rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold text-neutral-300 transition hover:border-industrial-yellow/40 hover:text-industrial-yellow"
           >
             Volver a la tienda
           </RouterLink>
+          <template v-else-if="!isAuthenticated">
+            <RouterLink
+              to="/login"
+              class="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-neutral-400 transition hover:border-industrial-yellow/35 hover:text-industrial-yellow"
+            >
+              Iniciar sesión (panel)
+            </RouterLink>
+          </template>
           <a
-            v-if="isAuthenticated"
+            v-else
             :href="adminUrl('/admin/dashboard')"
             target="_blank"
             rel="noopener noreferrer"
-            class="rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold text-neutral-400 transition hover:border-industrial-yellow/40 hover:text-industrial-yellow"
+            class="rounded-lg border border-industrial-yellow/25 px-3 py-2 text-xs font-semibold text-industrial-yellow transition hover:bg-industrial-yellow/10"
           >
-            Panel admin ↗
+            Abrir panel administración ↗
           </a>
         </div>
       </div>
