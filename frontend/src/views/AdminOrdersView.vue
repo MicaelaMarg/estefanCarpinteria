@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
 import { toast } from 'vue3-toastify'
 import configApi from '../api/configApi'
 import type { ApiResponse } from '../interfaces/api'
@@ -174,7 +173,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="section-container pb-20 pt-28">
+  <section class="section-container pb-16 pt-6 md:pt-8">
     <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
         <p class="text-sm font-semibold uppercase tracking-[0.14em] text-industrial-yellow">Administración</p>
@@ -182,18 +181,6 @@ onMounted(() => {
         <p class="text-sm text-neutral-400">Apunte de compras · {{ total }} pedido(s) con este filtro</p>
       </div>
       <div class="flex flex-wrap items-center gap-3">
-        <RouterLink
-          to="/admin/dashboard"
-          class="rounded-lg border border-white/20 px-4 py-2 text-sm text-soft-white hover:border-industrial-yellow"
-        >
-          Panel
-        </RouterLink>
-        <RouterLink
-          to="/admin/productos"
-          class="rounded-lg border border-white/20 px-4 py-2 text-sm text-soft-white hover:border-industrial-yellow"
-        >
-          Productos
-        </RouterLink>
         <button type="button" class="btn-primary px-4 py-2 text-sm" :disabled="loading" @click="fetchOrders">
           Actualizar
         </button>

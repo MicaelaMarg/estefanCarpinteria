@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { computed } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
+import { adminUrl, spaUrl } from '../utils/adminLinks'
 
+const route = useRoute()
 const { isAuthenticated } = useAuth()
+
+const isAdminPage = computed(() => route.path.startsWith('/admin'))
 </script>
 
 <template>
@@ -44,20 +49,42 @@ const { isAuthenticated } = useAuth()
           >
             Instagram
           </a>
-          <RouterLink
-            v-if="!isAuthenticated"
-            to="/login"
-            class="rounded-lg border border-neutral-700 px-3 py-2 hover:border-industrial-yellow hover:text-industrial-yellow"
-          >
-            Login
-          </RouterLink>
-          <RouterLink
-            v-else
-            to="/admin/productos"
-            class="rounded-lg border border-neutral-700 px-3 py-2 hover:border-industrial-yellow hover:text-industrial-yellow"
-          >
-            Administración
-          </RouterLink>
+        </div>
+
+        <p class="mt-6 font-semibold">Administración</p>
+        <p class="mt-1 text-xs text-neutral-500">
+          El acceso no está en el menú superior; se abre en una pestaña nueva.
+        </p>
+        <div class="mt-3 space-y-2 text-sm">
+          <template v-if="isAdminPage">
+            <RouterLink
+              to="/"
+              class="inline-flex rounded-lg border border-neutral-700 px-3 py-2 font-semibold hover:border-industrial-yellow hover:text-industrial-yellow"
+            >
+              Volver a la tienda
+            </RouterLink>
+          </template>
+          <template v-else>
+            <a
+              :href="spaUrl('/login')"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 rounded-lg border border-neutral-700 px-3 py-2 font-semibold hover:border-industrial-yellow hover:text-industrial-yellow"
+            >
+              Iniciar sesión
+              <span class="text-[10px] font-normal text-neutral-500">nueva pestaña ↗</span>
+            </a>
+            <a
+              v-if="isAuthenticated"
+              :href="adminUrl('/admin/dashboard')"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="mt-1 flex items-center gap-2 rounded-lg border border-industrial-yellow/40 px-3 py-2 font-semibold text-industrial-yellow hover:bg-industrial-yellow/10"
+            >
+              Abrir panel
+              <span class="text-[10px] font-normal text-neutral-400">nueva pestaña ↗</span>
+            </a>
+          </template>
         </div>
       </div>
     </div>

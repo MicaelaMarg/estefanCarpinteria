@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AboutView from '../views/AboutView.vue'
+import AdminLayout from '../layouts/AdminLayout.vue'
 import AdminDashboardView from '../views/AdminDashboardView.vue'
 import AdminOrdersView from '../views/AdminOrdersView.vue'
 import AdminProductsView from '../views/AdminProductsView.vue'
@@ -25,22 +26,27 @@ const router = createRouter({
     { path: '/contacto', name: 'contact', component: ContactView },
     { path: '/login', name: 'login', component: LoginView },
     {
-      path: '/admin/dashboard',
-      name: 'admin-dashboard',
-      component: AdminDashboardView,
+      path: '/admin',
+      component: AdminLayout,
       meta: { requiresAuth: true },
-    },
-    {
-      path: '/admin/pedidos',
-      name: 'admin-orders',
-      component: AdminOrdersView,
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/admin/productos',
-      name: 'admin-products',
-      component: AdminProductsView,
-      meta: { requiresAuth: true },
+      children: [
+        { path: '', redirect: { name: 'admin-dashboard' } },
+        {
+          path: 'dashboard',
+          name: 'admin-dashboard',
+          component: AdminDashboardView,
+        },
+        {
+          path: 'pedidos',
+          name: 'admin-orders',
+          component: AdminOrdersView,
+        },
+        {
+          path: 'productos',
+          name: 'admin-products',
+          component: AdminProductsView,
+        },
+      ],
     },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
@@ -50,7 +56,8 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  if (to.meta.requiresAuth && !localStorage.getItem('token')) {
+  const needsAuth = to.matched.some((r) => r.meta.requiresAuth)
+  if (needsAuth && !localStorage.getItem('token')) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
   return true

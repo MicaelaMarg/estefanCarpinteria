@@ -245,7 +245,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="section-container py-10">
+  <section class="section-container py-6 md:py-8">
     <div class="mb-8 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
       <div>
         <p class="text-sm font-semibold uppercase tracking-[0.14em] text-industrial-yellow">Administración</p>
