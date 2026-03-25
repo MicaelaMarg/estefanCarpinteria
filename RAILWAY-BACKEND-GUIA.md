@@ -109,6 +109,8 @@ railway redeploy
 4. **DATABASE_URL / MYSQL*:** Mismo proyecto que el plugin MySQL; usuario/clave/db correctos.
 5. **Tabla:** En MySQL Query: `SHOW TABLES LIKE 'products';` y `SELECT COUNT(*) FROM products;`.
 6. **Logs backend:** buscar `[mysql]`, `[boot]`, `[admin-products]`, `[auth]`.
+7. **Nombre de base en el pool:** la **primera** vez que alguien llama `GET /api/admin/products`, en logs sale  
+   `[admin-products] MySQL DATABASE(): <nombre>` — tiene que ser el **mismo** que en Railway → MySQL (plugin). Si ves `railway` en el panel y `carpinteria` en el log (o al revés), el backend está apuntando a **otra** base.
 
 **Probar login:**
 

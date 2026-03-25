@@ -10,6 +10,9 @@ interface CountRow extends RowDataPacket {
   total: number
 }
 
+/** Una sola vez por proceso: ver en logs qué base usa el pool (Railway vs local). */
+let loggedAdminListDatabase = false
+
 /** Mensaje y status HTTP según error de mysql2 al listar productos */
 function listProductsErrorResponse(error: unknown): { status: number; message: string } {
   const e = error as { code?: string; errno?: number; sqlMessage?: string }
@@ -186,6 +189,17 @@ const validatePatch = (body: ProductBody) => {
 
 export const listAdminProducts = async (req: AuthRequest, res: Response) => {
   try {
+    if (!loggedAdminListDatabase) {
+      loggedAdminListDatabase = true
+      try {
+        const [dbRows] = await pool.query('SELECT DATABASE() AS db')
+        const row = (dbRows as Array<{ db: string | null }>)[0]
+        console.log('[admin-products] MySQL DATABASE():', row?.db ?? '(null)')
+      } catch (e) {
+        logMysqlError('SELECT DATABASE() (debug)', e)
+      }
+    }
+
     const page = parsePositiveNumber(req.query.page, 1)
     const limit = Math.min(parsePositiveNumber(req.query.limit, 100), 500)
     const offset = (page - 1) * limit
