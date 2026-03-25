@@ -57,6 +57,14 @@ const handleLogout = () => {
         </RouterLink>
         <RouterLink
           v-if="isAuthenticated"
+          to="/admin/pedidos"
+          class="text-sm font-semibold transition-colors hover:text-industrial-yellow"
+          :class="isActive('/admin/pedidos') ? 'text-industrial-yellow' : 'text-soft-white'"
+        >
+          Pedidos
+        </RouterLink>
+        <RouterLink
+          v-if="isAuthenticated"
           to="/admin/productos"
           class="text-sm font-semibold transition-colors hover:text-industrial-yellow"
           :class="isActive('/admin/productos') ? 'text-industrial-yellow' : 'text-soft-white'"
