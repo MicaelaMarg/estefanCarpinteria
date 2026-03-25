@@ -4,6 +4,7 @@ import { env, toPublicAssetUrl } from '../config/env.js'
 import { pool } from '../db/pool.js'
 import { getPreferenceApi } from '../services/mercadopago.service.js'
 import { sendError, sendSuccess } from '../utils/response.js'
+import { resolveMercadoPagoNotificationUrl } from '../utils/mpNotificationUrl.js'
 import { unknownErrorMessage } from '../utils/unknownErrorMessage.js'
 
 interface CartBodyItem {
@@ -144,12 +145,14 @@ export const postCheckout = async (req: Request, res: Response) => {
     await conn.commit()
 
     const base = env.publicFrontendUrl
-    const notificationUrl = env.publicBaseUrl
-      ? `${env.publicBaseUrl}/api/webhook`
-      : undefined
-    if (!notificationUrl) {
-      console.warn(
-        '[checkout] PUBLIC_BASE_URL vacío: Mercado Pago no recibirá webhooks hasta configurarlo en Railway',
+    const notificationUrl = resolveMercadoPagoNotificationUrl({
+      explicitUrl: env.mercadopagoNotificationUrl,
+      publicBaseUrl: env.publicBaseUrl,
+      sendInPreference: env.mercadopagoSendNotificationUrl,
+    })
+    if (!notificationUrl && !env.mercadopagoSendNotificationUrl && !env.mercadopagoNotificationUrl) {
+      console.log(
+        '[checkout] notification_url no va en la preferencia; MP usará la URL de Webhooks del panel Developers',
       )
     }
 

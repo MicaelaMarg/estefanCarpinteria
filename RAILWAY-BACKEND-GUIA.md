@@ -1,4 +1,4 @@
-# Guía práctica: JWT 401 + MySQL en Railway (backend Express + mysql2)
+  # Guía práctica: JWT 401 + MySQL en Railway (backend Express + mysql2)
 
 ## 1. Diagnóstico rápido
 
@@ -136,13 +136,15 @@ curl -s https://TU-BACKEND/api/admin/products?page=1&limit=5 \
 | Variable | Uso |
 |----------|-----|
 | `MERCADOPAGO_ACCESS_TOKEN` | Token de producción o de prueba desde [Tus integraciones](https://www.mercadopago.com.ar/developers/panel/credentials). |
-| `PUBLIC_BASE_URL` | URL pública del API, **sin** barra final. Se arma `notification_url` = `{PUBLIC_BASE_URL}/api/webhook`. Debe ser HTTPS en producción. |
+| `PUBLIC_BASE_URL` | URL pública del API (**sin** barra final), HTTPS. Sirve para URLs de imágenes en ítems; **no** manda `notification_url` en la preferencia salvo que actives la opción de abajo. |
 | `PUBLIC_FRONTEND_URL` | URL del sitio Vue (éxito / error / pendiente): `{PUBLIC_FRONTEND_URL}/pago/exito` etc. |
 | `CORS_ORIGIN` | Incluí la URL del front para que el navegador pueda llamar `POST /api/checkout`. |
+| `MERCADOPAGO_SEND_NOTIFICATION_URL` | Solo `true` si querés forzar `notification_url` en la preferencia con `{PUBLIC_BASE_URL}/api/webhook`. Por defecto el código **no** la envía y MP usa la URL de **Webhooks** del panel (evita errores tipo “notification_url invalid”). |
+| `MERCADOPAGO_NOTIFICATION_URL` | (Opcional) URL completa del webhook si necesitás enviarla en la preferencia a mano. |
 
 **Base de datos:** ejecutá `backend/sql/migrations/005_orders_mercadopago.sql` en el mismo MySQL que usa el backend (o el `schema.sql` actualizado).
 
-**Panel Mercado Pago:** en la app podés dejar la URL de notificación vacía si ya enviás `notification_url` en la preferencia (lo hace el código). Si configurás webhook en el panel, que apunte al mismo `POST .../api/webhook`.
+**Panel Mercado Pago:** configurá **Webhooks** con `https://TU-API/api/webhook`. El checkout **no** duplica esa URL en la preferencia por defecto; las notificaciones siguen llegando a la URL del panel.
 
 **Producción:** probá primero con credenciales de **test** y tarjetas de prueba; el `init_point` de sandbox vs producción lo resuelve la API según el token.
 

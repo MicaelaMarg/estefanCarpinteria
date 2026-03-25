@@ -86,8 +86,15 @@ export const env = {
   adminPassword: process.env.ADMIN_PASSWORD ?? 'admin1234',
   adminPasswordHash: (process.env.ADMIN_PASSWORD_HASH ?? '').trim(),
   uploadDir: process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'uploads'),
-  /** URL pública del backend (sin barra final), ej. https://api.xxx.railway.app — para URLs absolutas de uploads y webhooks MP */
-  publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? '').replace(/\/$/, ''),
+  /** URL pública del backend (sin barra final), ej. https://api.xxx.railway.app — uploads; opcional para notification_url en preferencia */
+  publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? '').trim().replace(/\/$/, ''),
+  /**
+   * Si true, envía notification_url en la preferencia (armada con PUBLIC_BASE_URL).
+   * Por defecto false: MP usa solo la URL de Webhooks del panel y evita "notification_url invalid".
+   */
+  mercadopagoSendNotificationUrl: process.env.MERCADOPAGO_SEND_NOTIFICATION_URL === 'true',
+  /** URL completa del webhook (https://.../api/webhook). Tiene prioridad sobre armar desde PUBLIC_BASE_URL. */
+  mercadopagoNotificationUrl: (process.env.MERCADOPAGO_NOTIFICATION_URL ?? '').trim(),
   /** URL pública del frontend (sin barra final) — back_urls de Mercado Pago */
   publicFrontendUrl: resolvePublicFrontendUrl(),
   mercadopagoAccessToken: (process.env.MERCADOPAGO_ACCESS_TOKEN ?? '').trim(),
