@@ -50,6 +50,26 @@ const dbUseSsl =
   process.env.DB_SSL === 'true' ||
   (process.env.DB_SSL !== 'false' && treatAsDeployed && !isLocalDb && dbHost !== '')
 
+/**
+ * Mercado Pago exige back_urls públicas; en Railway sin PUBLIC_FRONTEND_URL
+ * suele quedar localhost y MP devuelve error → 502 en checkout.
+ * Si CORS_ORIGIN es una URL concreta (típico en prod), la usamos como fallback.
+ */
+function resolvePublicFrontendUrl(): string {
+  const explicit = (process.env.PUBLIC_FRONTEND_URL ?? '').trim().replace(/\/$/, '')
+  if (explicit) return explicit
+
+  const cors = (process.env.CORS_ORIGIN ?? '').trim()
+  if (cors && cors !== '*') {
+    const first = cors.split(',')[0]?.trim()
+    if (first?.startsWith('https://') || first?.startsWith('http://')) {
+      return first.replace(/\/$/, '')
+    }
+  }
+
+  return 'http://localhost:5173'.replace(/\/$/, '')
+}
+
 export const env = {
   port: Number(process.env.PORT ?? 4000),
   nodeEnv,
@@ -69,7 +89,7 @@ export const env = {
   /** URL pública del backend (sin barra final), ej. https://api.xxx.railway.app — para URLs absolutas de uploads y webhooks MP */
   publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? '').replace(/\/$/, ''),
   /** URL pública del frontend (sin barra final) — back_urls de Mercado Pago */
-  publicFrontendUrl: (process.env.PUBLIC_FRONTEND_URL ?? 'http://localhost:5173').replace(/\/$/, ''),
+  publicFrontendUrl: resolvePublicFrontendUrl(),
   mercadopagoAccessToken: (process.env.MERCADOPAGO_ACCESS_TOKEN ?? '').trim(),
 }
 

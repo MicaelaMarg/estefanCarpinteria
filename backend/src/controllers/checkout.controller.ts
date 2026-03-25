@@ -46,6 +46,15 @@ export const postCheckout = async (req: Request, res: Response) => {
     return sendError(res, 'Pagos no configurados en el servidor', 503)
   }
 
+  if (env.isRailway && /localhost|127\.0\.0\.1/i.test(env.publicFrontendUrl)) {
+    console.error('[checkout] publicFrontendUrl inválido en Railway:', env.publicFrontendUrl)
+    return sendError(
+      res,
+      'Configurá PUBLIC_FRONTEND_URL o CORS_ORIGIN con la URL HTTPS del frontend. Mercado Pago rechaza localhost en back_urls.',
+      503,
+    )
+  }
+
   const parsed = parseCartItems(req.body)
   if (!parsed) {
     return sendError(res, 'Carrito inválido: enviá { items: [{ id, quantity }] }', 400)
