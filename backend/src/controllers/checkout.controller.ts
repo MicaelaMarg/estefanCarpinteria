@@ -4,6 +4,7 @@ import { env, toPublicAssetUrl } from '../config/env.js'
 import { pool } from '../db/pool.js'
 import { getPreferenceApi } from '../services/mercadopago.service.js'
 import { sendError, sendSuccess } from '../utils/response.js'
+import { unknownErrorMessage } from '../utils/unknownErrorMessage.js'
 
 interface CartBodyItem {
   id?: unknown
@@ -189,8 +190,8 @@ export const postCheckout = async (req: Request, res: Response) => {
     } catch (e) {
       console.error('[checkout] Mercado Pago preference.create:', e)
       await pool.query('DELETE FROM orders WHERE id = ?', [orderId])
-      const msg = e instanceof Error ? e.message : String(e)
-      return sendError(res, `No se pudo iniciar el pago: ${msg}`, 502)
+      const detail = unknownErrorMessage(e, 'revisá credenciales y datos del pedido')
+      return sendError(res, `No se pudo iniciar el pago: ${detail}`, 502)
     }
 
     return sendSuccess(

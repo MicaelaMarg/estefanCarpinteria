@@ -34,7 +34,20 @@ configApi.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    const message = error.response?.data?.message ?? 'Ocurrio un error inesperado'
+    const raw = error.response?.data?.message
+    const message =
+      typeof raw === 'string'
+        ? raw
+        : raw != null && typeof raw === 'object'
+          ? (() => {
+              try {
+                const s = JSON.stringify(raw)
+                return s.length > 280 ? `${s.slice(0, 280)}…` : s
+              } catch {
+                return 'Ocurrio un error inesperado'
+              }
+            })()
+          : 'Ocurrio un error inesperado'
     toast.error(message)
     return Promise.reject(error)
   },
