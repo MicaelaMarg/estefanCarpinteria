@@ -9,6 +9,10 @@ import {
   listAdminProducts,
   updateAdminProduct,
 } from '../controllers/admin-products.controller.js'
+import {
+  getAdminShippingSettings,
+  patchAdminShippingSettings,
+} from '../controllers/admin-settings.controller.js'
 import { uploadProductImage } from '../controllers/admin-upload.controller.js'
 import { requireAdmin } from '../middleware/auth.middleware.js'
 import { uploadImage } from '../middleware/upload.middleware.js'
@@ -19,6 +23,8 @@ const adminRouter = Router()
 adminRouter.use(requireAdmin)
 
 adminRouter.get('/dashboard', getAdminDashboard)
+adminRouter.get('/settings/shipping', getAdminShippingSettings)
+adminRouter.patch('/settings/shipping', patchAdminShippingSettings)
 adminRouter.get('/orders', listAdminOrders)
 adminRouter.patch('/orders/:id/fulfillment', patchOrderFulfillment)
 adminRouter.get('/products', listAdminProducts)

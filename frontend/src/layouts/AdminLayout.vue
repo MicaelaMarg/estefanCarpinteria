@@ -10,13 +10,16 @@ const items = [
   { label: 'Panel', to: '/admin/dashboard' },
   { label: 'Pedidos', to: '/admin/pedidos' },
   { label: 'Productos', to: '/admin/productos' },
+  { label: 'Ajustes', to: '/admin/ajustes' },
 ] as const
 
 const linkClass = (to: string) => {
   const active =
     to === '/admin/dashboard'
       ? route.path === '/admin/dashboard'
-      : route.path === to || route.path.startsWith(`${to}/`)
+      : to === '/admin/ajustes'
+        ? route.path === '/admin/ajustes'
+        : route.path === to || route.path.startsWith(`${to}/`)
   return [
     'block rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors',
     active

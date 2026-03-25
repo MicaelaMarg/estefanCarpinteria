@@ -3,6 +3,7 @@ import type { PoolConnection } from 'mysql2/promise'
 import type { ResultSetHeader, RowDataPacket } from 'mysql2'
 import { env, toPublicAssetUrl } from '../config/env.js'
 import { pool } from '../db/pool.js'
+import { getShippingDeliveryPriceArs } from '../services/app-settings.service.js'
 import { getPreferenceApi } from '../services/mercadopago.service.js'
 import { sendError, sendSuccess } from '../utils/response.js'
 import { resolveMercadoPagoNotificationUrl } from '../utils/mpNotificationUrl.js'
@@ -17,8 +18,8 @@ function parseShippingMode(body: unknown): ShippingMode {
   return 'pickup'
 }
 
-export const getShippingOptions = (_req: Request, res: Response) => {
-  const deliveryPrice = env.shippingDeliveryPriceArs
+export const getShippingOptions = async (_req: Request, res: Response) => {
+  const deliveryPrice = await getShippingDeliveryPriceArs()
   return sendSuccess(
     res,
     {
@@ -34,7 +35,7 @@ export const getShippingOptions = (_req: Request, res: Response) => {
           label: 'Envío a domicilio',
           price: deliveryPrice,
           description:
-            'Costo fijo según zona; nos contactamos para coordinar fecha y dirección.',
+            'Costo fijo configurado por el taller; coordinamos fecha y dirección por WhatsApp.',
         },
       ],
     },
@@ -216,8 +217,8 @@ export const postCheckout = async (req: Request, res: Response) => {
     }
   }
 
-  const rawShip = shippingMode === 'delivery' ? env.shippingDeliveryPriceArs : 0
-  const shippingCost = Number.isFinite(rawShip) && rawShip >= 0 ? rawShip : 0
+  const configuredShip = shippingMode === 'delivery' ? await getShippingDeliveryPriceArs() : 0
+  const shippingCost = Number.isFinite(configuredShip) && configuredShip >= 0 ? configuredShip : 0
 
   const merged = new Map<number, number>()
   for (const line of parsed) {

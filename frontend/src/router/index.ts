@@ -4,6 +4,7 @@ import AdminLayout from '../layouts/AdminLayout.vue'
 import AdminDashboardView from '../views/AdminDashboardView.vue'
 import AdminOrdersView from '../views/AdminOrdersView.vue'
 import AdminProductsView from '../views/AdminProductsView.vue'
+import AdminSettingsView from '../views/AdminSettingsView.vue'
 import CartView from '../views/CartView.vue'
 import CatalogView from '../views/CatalogView.vue'
 import ContactView from '../views/ContactView.vue'
@@ -45,6 +46,11 @@ const router = createRouter({
           path: 'productos',
           name: 'admin-products',
           component: AdminProductsView,
+        },
+        {
+          path: 'ajustes',
+          name: 'admin-settings',
+          component: AdminSettingsView,
         },
       ],
     },
