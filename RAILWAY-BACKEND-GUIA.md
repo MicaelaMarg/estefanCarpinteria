@@ -103,7 +103,7 @@ railway redeploy
 
 ## 5. Checklist de debugging (orden sugerido)
 
-1. **Health:** `curl -s https://TU-BACKEND/api/health` → `database: true`, `products: "ok"`, `admin_users: "ok"`.
+1. **Health:** `curl -s https://TU-BACKEND/api/health` → `database: true`, `products: "ok"`, `orders: "ok"`, `admin_users: "ok"`.
 2. **JWT:** En Railway, `JWT_SECRET` definido y **sin cambiarlo** entre deploys si querés sesiones estables.
 3. **Token en el navegador:** Application → Local Storage → `token`; si dudás, borrá y volvé a loguear.
 4. **DATABASE_URL / MYSQL*:** Mismo proyecto que el plugin MySQL; usuario/clave/db correctos.
@@ -129,7 +129,26 @@ curl -s https://TU-BACKEND/api/admin/products?page=1&limit=5 \
 
 ---
 
-## 6. Bonus
+## 6. Mercado Pago (Checkout Pro + webhook)
+
+**Variables en el servicio del backend (nunca en el frontend):**
+
+| Variable | Uso |
+|----------|-----|
+| `MERCADOPAGO_ACCESS_TOKEN` | Token de producción o de prueba desde [Tus integraciones](https://www.mercadopago.com.ar/developers/panel/credentials). |
+| `PUBLIC_BASE_URL` | URL pública del API, **sin** barra final. Se arma `notification_url` = `{PUBLIC_BASE_URL}/api/webhook`. Debe ser HTTPS en producción. |
+| `PUBLIC_FRONTEND_URL` | URL del sitio Vue (éxito / error / pendiente): `{PUBLIC_FRONTEND_URL}/pago/exito` etc. |
+| `CORS_ORIGIN` | Incluí la URL del front para que el navegador pueda llamar `POST /api/checkout`. |
+
+**Base de datos:** ejecutá `backend/sql/migrations/005_orders_mercadopago.sql` en el mismo MySQL que usa el backend (o el `schema.sql` actualizado).
+
+**Panel Mercado Pago:** en la app podés dejar la URL de notificación vacía si ya enviás `notification_url` en la preferencia (lo hace el código). Si configurás webhook en el panel, que apunte al mismo `POST .../api/webhook`.
+
+**Producción:** probá primero con credenciales de **test** y tarjetas de prueba; el `init_point` de sandbox vs producción lo resuelve la API según el token.
+
+---
+
+## 7. Bonus
 
 ### Evitar que “se rompa la sesión” al cambiar `JWT_SECRET`
 

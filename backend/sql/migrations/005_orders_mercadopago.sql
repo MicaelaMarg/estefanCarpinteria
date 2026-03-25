@@ -1,24 +1,4 @@
-CREATE TABLE IF NOT EXISTS products (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(180) NOT NULL,
-  description TEXT NOT NULL,
-  price DECIMAL(12,2) NOT NULL,
-  category VARCHAR(80) NOT NULL,
-  image_url VARCHAR(2048) NOT NULL,
-  video_url VARCHAR(2048) NULL,
-  stock_cargado INT NOT NULL DEFAULT 0,
-  stock_disponible INT NOT NULL DEFAULT 0,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS admin_users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  email VARCHAR(255) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_admin_users_email (email)
-);
-
+-- Pedidos Checkout Pro + ítems (precios snapshot desde DB al momento de la compra)
 CREATE TABLE IF NOT EXISTS orders (
   id INT AUTO_INCREMENT PRIMARY KEY,
   status ENUM('pending', 'paid', 'failed') NOT NULL DEFAULT 'pending',

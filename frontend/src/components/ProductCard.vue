@@ -10,6 +10,7 @@ const disponible = () => Number(props.product.stock_disponible ?? 0)
 
 const emit = defineEmits<{
   detail: [id: number]
+  addToCart: [product: Product]
 }>()
 </script>
 
@@ -45,11 +46,21 @@ const emit = defineEmits<{
       <p class="line-clamp-2 text-sm text-neutral-300">
         {{ product.description }}
       </p>
-      <div class="flex items-center justify-between pt-1">
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
         <p class="text-xl font-extrabold text-industrial-yellow">${{ product.price.toLocaleString('es-AR') }}</p>
-        <button class="btn-primary px-4 py-2 text-sm" @click="emit('detail', product.id)">
-          Ver detalle
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="rounded-lg border border-white/25 px-3 py-2 text-sm font-semibold text-soft-white transition hover:border-industrial-yellow hover:text-industrial-yellow disabled:cursor-not-allowed disabled:opacity-40"
+            :disabled="disponible() === 0"
+            @click="emit('addToCart', product)"
+          >
+            Al carrito
+          </button>
+          <button type="button" class="btn-primary px-4 py-2 text-sm" @click="emit('detail', product.id)">
+            Ver detalle
+          </button>
+        </div>
       </div>
     </div>
   </article>

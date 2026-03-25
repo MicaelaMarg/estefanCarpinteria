@@ -15,6 +15,7 @@ const emit = defineEmits<{
   applyFilters: [filters: ProductFilters]
   setPage: [page: number]
   viewDetail: [id: number]
+  addToCart: [product: Product]
 }>()
 
 const localFilters = reactive<ProductFilters>({
@@ -105,6 +106,7 @@ const handleApply = () => {
         :key="product.id"
         :product="product"
         @detail="emit('viewDetail', $event)"
+        @add-to-cart="emit('addToCart', $event)"
       />
     </div>
 

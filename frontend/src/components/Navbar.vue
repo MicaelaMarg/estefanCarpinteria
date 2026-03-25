@@ -2,10 +2,12 @@
 import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
+import { useCartStore } from '../stores/cart'
 
 const route = useRoute()
 const router = useRouter()
 const { isAuthenticated, logout } = useAuth()
+const cart = useCartStore()
 
 const links = [
   { label: 'Inicio', to: '/' },
@@ -39,6 +41,19 @@ const handleLogout = () => {
           :class="isActive(link.to) ? 'text-industrial-yellow' : 'text-soft-white'"
         >
           {{ link.label }}
+        </RouterLink>
+        <RouterLink
+          to="/carrito"
+          class="relative text-sm font-semibold transition-colors hover:text-industrial-yellow"
+          :class="isActive('/carrito') ? 'text-industrial-yellow' : 'text-soft-white'"
+        >
+          Carrito
+          <span
+            v-if="cart.itemCount > 0"
+            class="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-inferno-red px-1 text-[10px] font-bold text-white"
+          >
+            {{ cart.itemCount > 99 ? '99+' : cart.itemCount }}
+          </span>
         </RouterLink>
         <RouterLink
           v-if="isAuthenticated"

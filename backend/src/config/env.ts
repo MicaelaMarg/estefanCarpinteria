@@ -66,8 +66,11 @@ export const env = {
   adminPassword: process.env.ADMIN_PASSWORD ?? 'admin1234',
   adminPasswordHash: (process.env.ADMIN_PASSWORD_HASH ?? '').trim(),
   uploadDir: process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'uploads'),
-  /** URL pública del backend (sin barra final), ej. https://api.xxx.railway.app — para URLs absolutas de uploads */
+  /** URL pública del backend (sin barra final), ej. https://api.xxx.railway.app — para URLs absolutas de uploads y webhooks MP */
   publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? '').replace(/\/$/, ''),
+  /** URL pública del frontend (sin barra final) — back_urls de Mercado Pago */
+  publicFrontendUrl: (process.env.PUBLIC_FRONTEND_URL ?? 'http://localhost:5173').replace(/\/$/, ''),
+  mercadopagoAccessToken: (process.env.MERCADOPAGO_ACCESS_TOKEN ?? '').trim(),
 }
 
 export function toPublicAssetUrl(assetPath: string): string {

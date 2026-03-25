@@ -7,7 +7,9 @@ import { verifyMysqlOnBoot } from './db/verifyConnection.js'
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js'
 import adminRouter from './routes/admin.routes.js'
 import authRouter from './routes/auth.routes.js'
+import checkoutRouter from './routes/checkout.routes.js'
 import productsRouter from './routes/products.routes.js'
+import { postMercadoPagoWebhook } from './controllers/mercadopago-webhook.controller.js'
 import { sendError, sendSuccess } from './utils/response.js'
 
 fs.mkdirSync(env.uploadDir, { recursive: true })
@@ -61,9 +63,20 @@ app.get('/api/health', async (_req, res) => {
         console.error('[health] products:', e)
       }
     }
+    let orders: 'ok' | 'missing' | 'error' = 'ok'
+    try {
+      await pool.query('SELECT 1 FROM orders LIMIT 1')
+    } catch (e) {
+      if (isMissingTable(e)) {
+        orders = 'missing'
+      } else {
+        orders = 'error'
+        console.error('[health] orders:', e)
+      }
+    }
     return sendSuccess(
       res,
-      { ok: true, database: true, admin_users: adminUsers, products },
+      { ok: true, database: true, admin_users: adminUsers, products, orders },
       1,
       'API operativa',
     )
@@ -76,6 +89,8 @@ app.get('/api/health', async (_req, res) => {
 app.use('/api/products', productsRouter)
 app.use('/api/auth', authRouter)
 app.use('/api/admin', adminRouter)
+app.use('/api/checkout', checkoutRouter)
+app.post('/api/webhook', postMercadoPagoWebhook)
 
 app.use(notFoundHandler)
 app.use(errorHandler)
