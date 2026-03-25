@@ -1,19 +1,30 @@
 <script setup lang="ts">
-defineProps<{
-  phone: string
-}>()
+import { computed } from 'vue'
+import { waMeUrl, WHATSAPP_DEFAULT_MESSAGE } from '../utils/whatsapp'
+
+const props = withDefaults(
+  defineProps<{
+    phone: string
+    message?: string
+  }>(),
+  { message: undefined },
+)
+
+const href = computed(() => waMeUrl(props.phone, props.message ?? WHATSAPP_DEFAULT_MESSAGE))
 </script>
 
 <template>
   <a
-    :href="`https://wa.me/${phone}`"
+    :href="href"
     target="_blank"
-    rel="noreferrer"
+    rel="noopener noreferrer"
     aria-label="Contactar por WhatsApp"
-    class="fixed bottom-5 right-5 z-50 rounded-full bg-[#25D366] p-4 text-white shadow-lg transition hover:scale-105"
+    class="fixed bottom-5 right-5 z-50 rounded-full bg-[#25D366] p-4 text-white shadow-lg transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366]"
   >
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M20.52 3.48A11.76 11.76 0 0 0 12.14 0C5.5 0 .1 5.4.1 12.04c0 2.1.55 4.15 1.59 5.96L0 24l6.16-1.62a11.9 11.9 0 0 0 5.95 1.52h.01c6.64 0 12.04-5.4 12.04-12.04a11.92 11.92 0 0 0-3.64-8.38ZM12.12 21.8h-.01a9.8 9.8 0 0 1-5-1.37l-.36-.21-3.65.96.98-3.56-.24-.37a9.8 9.8 0 0 1-1.52-5.2c0-5.44 4.43-9.88 9.88-9.88a9.8 9.8 0 0 1 6.98 2.9 9.8 9.8 0 0 1 2.9 6.99c0 5.45-4.43 9.88-9.86 9.88Zm5.42-7.41c-.3-.15-1.75-.86-2.02-.96s-.47-.15-.67.15-.77.96-.95 1.16-.35.22-.65.07c-.3-.15-1.25-.46-2.38-1.48-.88-.79-1.47-1.76-1.64-2.06s-.02-.47.13-.62c.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52s-.67-1.62-.92-2.22c-.24-.58-.48-.5-.67-.5h-.57c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.49s1.07 2.9 1.22 3.1c.15.2 2.1 3.2 5.08 4.49.7.3 1.25.48 1.68.62.71.22 1.35.19 1.86.12.57-.09 1.75-.71 1.99-1.4.25-.69.25-1.28.17-1.4s-.28-.2-.57-.35Z" />
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path
+        d="M20.52 3.48A11.76 11.76 0 0 0 12.14 0C5.5 0 .1 5.4.1 12.04c0 2.1.55 4.15 1.59 5.96L0 24l6.16-1.62a11.9 11.9 0 0 0 5.95 1.52h.01c6.64 0 12.04-5.4 12.04-12.04a11.92 11.92 0 0 0-3.64-8.38ZM12.12 21.8h-.01a9.8 9.8 0 0 1-5-1.37l-.36-.21-3.65.96.98-3.56-.24-.37a9.8 9.8 0 0 1-1.52-5.2c0-5.44 4.43-9.88 9.88-9.88a9.8 9.8 0 0 1 6.98 2.9 9.8 9.8 0 0 1 2.9 6.99c0 5.45-4.43 9.88-9.86 9.88Zm5.42-7.41c-.3-.15-1.75-.86-2.02-.96s-.47-.15-.67.15-.77.96-.95 1.16-.35.22-.65.07c-.3-.15-1.25-.46-2.38-1.48-.88-.79-1.47-1.76-1.64-2.06s-.02-.47.13-.62c.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52s-.67-1.62-.92-2.22c-.24-.58-.48-.5-.67-.5h-.57c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.49s1.07 2.9 1.22 3.1c.15.2 2.1 3.2 5.08 4.49.7.3 1.25.48 1.68.62.71.22 1.35.19 1.86.12.57-.09 1.75-.71 1.99-1.4.25-.69.25-1.28.17-1.4s-.28-.2-.57-.35Z"
+      />
     </svg>
   </a>
 </template>
