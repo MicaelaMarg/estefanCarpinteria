@@ -48,14 +48,6 @@ const handleLogout = () => {
         >
           Productos
         </RouterLink>
-        <RouterLink
-          v-if="!isAuthenticated"
-          to="/login"
-          class="text-sm font-semibold transition-colors hover:text-industrial-yellow"
-          :class="isActive('/login') ? 'text-industrial-yellow' : 'text-soft-white'"
-        >
-          Login
-        </RouterLink>
         <button
           v-if="isAuthenticated"
           type="button"
