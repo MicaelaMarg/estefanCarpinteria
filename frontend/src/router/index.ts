@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AboutView from '../views/AboutView.vue'
+import AdminDashboardView from '../views/AdminDashboardView.vue'
 import AdminOrdersView from '../views/AdminOrdersView.vue'
 import AdminProductsView from '../views/AdminProductsView.vue'
 import CartView from '../views/CartView.vue'
@@ -23,6 +24,12 @@ const router = createRouter({
     { path: '/nosotros', name: 'about', component: AboutView },
     { path: '/contacto', name: 'contact', component: ContactView },
     { path: '/login', name: 'login', component: LoginView },
+    {
+      path: '/admin/dashboard',
+      name: 'admin-dashboard',
+      component: AdminDashboardView,
+      meta: { requiresAuth: true },
+    },
     {
       path: '/admin/pedidos',
       name: 'admin-orders',

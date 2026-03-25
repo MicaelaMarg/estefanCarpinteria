@@ -1,9 +1,16 @@
 import type { Response } from 'express'
-import type { RowDataPacket } from 'mysql2'
+import type { ResultSetHeader, RowDataPacket } from 'mysql2'
 import { logMysqlError } from '../db/mysqlError.js'
 import { pool } from '../db/pool.js'
 import type { AuthRequest } from '../middleware/auth.middleware.js'
 import { sendError, sendSuccess } from '../utils/response.js'
+
+const FULFILLMENT_VALUES = ['pendiente', 'listo', 'enviado', 'entregado'] as const
+type FulfillmentValue = (typeof FULFILLMENT_VALUES)[number]
+
+function isFulfillmentValue(v: string): v is FulfillmentValue {
+  return (FULFILLMENT_VALUES as readonly string[]).includes(v)
+}
 
 interface CountRow extends RowDataPacket {
   total: number
@@ -24,6 +31,7 @@ interface OrderRow extends RowDataPacket {
   shipping_phone?: string | null
   shipping_address?: string | null
   shipping_notes?: string | null
+  fulfillment_status?: string | null
 }
 
 interface OrderItemRow extends RowDataPacket {
@@ -40,7 +48,15 @@ const parsePositiveNumber = (value: unknown, fallback: number) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
 
+function escapeLikeFragment(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
+}
+
 function serializeOrder(row: OrderRow) {
+  const fs = row.fulfillment_status
+  const fulfillment_status: FulfillmentValue =
+    fs && isFulfillmentValue(fs) ? fs : 'pendiente'
+
   return {
     id: row.id,
     status: row.status,
@@ -57,6 +73,7 @@ function serializeOrder(row: OrderRow) {
     shipping_phone: row.shipping_phone ?? null,
     shipping_address: row.shipping_address ?? null,
     shipping_notes: row.shipping_notes ?? null,
+    fulfillment_status,
     created_at:
       row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
     updated_at:
@@ -78,7 +95,7 @@ function listOrdersErrorResponse(error: unknown): { status: number; message: str
     return {
       status: 500,
       message:
-        'La tabla orders no tiene columnas de envío. Ejecutá las migraciones 006 y 007 en MySQL.',
+        'Faltan columnas en orders. Ejecutá migraciones 006, 007 y 008 (envío, contacto y estado manual de entrega).',
     }
   }
   if (
@@ -99,22 +116,41 @@ export const listAdminOrders = async (req: AuthRequest, res: Response) => {
   const statusFilter =
     statusRaw === 'pending' || statusRaw === 'paid' || statusRaw === 'failed' ? statusRaw : ''
 
+  const fulfillmentRaw = String(req.query.fulfillment ?? '').trim()
+  const fulfillmentFilter = isFulfillmentValue(fulfillmentRaw) ? fulfillmentRaw : ''
+
+  const qRaw = String(req.query.q ?? '').trim().slice(0, 120)
+  const useSearch = qRaw.length > 0
+
   try {
-    let countSql = 'SELECT COUNT(*) AS total FROM orders'
-    let listSql = 'SELECT * FROM orders ORDER BY created_at DESC LIMIT ? OFFSET ?'
-    const countParams: unknown[] = []
-    const listParams: unknown[] = [limit, offset]
+    const conditions: string[] = []
+    const baseParams: unknown[] = []
 
     if (statusFilter) {
-      countSql = 'SELECT COUNT(*) AS total FROM orders WHERE status = ?'
-      listSql = 'SELECT * FROM orders WHERE status = ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
-      countParams.push(statusFilter)
-      listParams.unshift(statusFilter)
+      conditions.push('status = ?')
+      baseParams.push(statusFilter)
+    }
+    if (fulfillmentFilter) {
+      conditions.push('fulfillment_status = ?')
+      baseParams.push(fulfillmentFilter)
+    }
+    if (useSearch) {
+      const esc = escapeLikeFragment(qRaw)
+      conditions.push(
+        '(shipping_phone LIKE ? ESCAPE ? OR shipping_contact_name LIKE ? ESCAPE ?)',
+      )
+      baseParams.push(`%${esc}%`, '\\', `%${esc}%`, '\\')
     }
 
-    const [countRows] = await pool.query<CountRow[]>(countSql, countParams)
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+
+    const countSql = `SELECT COUNT(*) AS total FROM orders ${where}`
+    const listSql = `SELECT * FROM orders ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+
+    const [countRows] = await pool.query<CountRow[]>(countSql, baseParams)
     const total = countRows[0]?.total ?? 0
 
+    const listParams = [...baseParams, limit, offset]
     const [orderRows] = await pool.query<OrderRow[]>(listSql, listParams)
     const ids = orderRows.map((o) => o.id)
 
@@ -148,6 +184,57 @@ export const listAdminOrders = async (req: AuthRequest, res: Response) => {
     return sendSuccess(res, data, total, '')
   } catch (error) {
     const { status, message } = listOrdersErrorResponse(error)
+    return sendError(res, message, status)
+  }
+}
+
+function patchErrorResponse(error: unknown): { status: number; message: string } {
+  const e = error as { code?: string; errno?: number }
+  logMysqlError('patchOrderFulfillment', error)
+  if (e.errno === 1054 || e.code === 'ER_BAD_FIELD_ERROR') {
+    return {
+      status: 500,
+      message: 'No existe fulfillment_status en orders. Ejecutá la migración 008 en MySQL.',
+    }
+  }
+  if (
+    e.code === 'ECONNREFUSED' ||
+    e.code === 'ETIMEDOUT' ||
+    e.code === 'PROTOCOL_CONNECTION_LOST'
+  ) {
+    return { status: 503, message: 'Sin conexión a MySQL.' }
+  }
+  return { status: 500, message: 'No se pudo actualizar el estado de entrega.' }
+}
+
+export const patchOrderFulfillment = async (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id)
+  if (!Number.isInteger(id) || id <= 0) {
+    return sendError(res, 'ID de pedido inválido', 400)
+  }
+
+  const body = req.body as { fulfillment_status?: unknown }
+  const raw = typeof body.fulfillment_status === 'string' ? body.fulfillment_status.trim() : ''
+  if (!isFulfillmentValue(raw)) {
+    return sendError(
+      res,
+      'fulfillment_status debe ser: pendiente, listo, enviado o entregado',
+      400,
+    )
+  }
+
+  try {
+    const [hdr] = await pool.query<ResultSetHeader>(
+      'UPDATE orders SET fulfillment_status = ? WHERE id = ?',
+      [raw, id],
+    )
+    const affected = hdr.affectedRows ?? 0
+    if (affected === 0) {
+      return sendError(res, 'Pedido no encontrado', 404)
+    }
+    return sendSuccess(res, { id, fulfillment_status: raw }, 1, '')
+  } catch (error) {
+    const { status, message } = patchErrorResponse(error)
     return sendError(res, message, status)
   }
 }

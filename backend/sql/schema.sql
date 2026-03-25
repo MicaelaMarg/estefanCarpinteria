@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_phone VARCHAR(40) NULL,
   shipping_address TEXT NULL,
   shipping_notes VARCHAR(500) NULL,
+  fulfillment_status ENUM('pendiente', 'listo', 'enviado', 'entregado') NOT NULL DEFAULT 'pendiente',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_orders_status (status),

@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import multer from 'multer'
-import { listAdminOrders } from '../controllers/admin-orders.controller.js'
+import { getAdminDashboard } from '../controllers/admin-dashboard.controller.js'
+import { listAdminOrders, patchOrderFulfillment } from '../controllers/admin-orders.controller.js'
 import {
   createAdminProduct,
   deleteAdminProduct,
@@ -17,7 +18,9 @@ const adminRouter = Router()
 
 adminRouter.use(requireAdmin)
 
+adminRouter.get('/dashboard', getAdminDashboard)
 adminRouter.get('/orders', listAdminOrders)
+adminRouter.patch('/orders/:id/fulfillment', patchOrderFulfillment)
 adminRouter.get('/products', listAdminProducts)
 adminRouter.post('/products', createAdminProduct)
 adminRouter.post('/products/:id/stock-ingreso', ingresoMercaderia)
