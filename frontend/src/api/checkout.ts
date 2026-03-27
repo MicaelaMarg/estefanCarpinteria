@@ -1,6 +1,6 @@
 import configApi from './configApi'
 
-export type ShippingMode = 'pickup' | 'delivery'
+export type ShippingMode = 'pickup' | 'delivery' | 'correo_argentino'
 
 export interface ShippingModeOption {
   id: ShippingMode

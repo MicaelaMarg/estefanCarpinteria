@@ -38,31 +38,35 @@ const shippingPrice = computed(() => {
 
 const grandTotal = computed(() => cart.total + shippingPrice.value)
 
+const needsShippingForm = computed(
+  () => shipping.value === 'delivery' || shipping.value === 'correo_argentino',
+)
+
 async function goToMercadoPago() {
   if (cart.lines.length === 0) return
-  if (shipping.value === 'delivery') {
+  const needsAddress = shipping.value === 'delivery' || shipping.value === 'correo_argentino'
+  if (needsAddress) {
     const digits = deliveryPhone.value.replace(/\D/g, '')
     if (digits.length < 6) {
       toast.error('Indicá un teléfono de contacto para el envío.')
       return
     }
     if (deliveryAddress.value.trim().length < 8) {
-      toast.error('Indicá la dirección completa (calle, número y localidad).')
+      toast.error('Indicá la dirección completa (calle, número, CP y localidad).')
       return
     }
   }
   paying.value = true
   try {
     const items = cart.lines.map((l) => ({ id: l.productId, quantity: l.quantity }))
-    const details =
-      shipping.value === 'delivery'
-        ? {
-            contact_name: deliveryName.value.trim() || undefined,
-            phone: deliveryPhone.value.trim(),
-            address: deliveryAddress.value.trim(),
-            notes: deliveryNotes.value.trim() || undefined,
-          }
-        : undefined
+    const details = needsAddress
+      ? {
+          contact_name: deliveryName.value.trim() || undefined,
+          phone: deliveryPhone.value.trim(),
+          address: deliveryAddress.value.trim(),
+          notes: deliveryNotes.value.trim() || undefined,
+        }
+      : undefined
     const { init_point } = await postCheckout(items, shipping.value, details)
     window.location.href = init_point
   } catch {
@@ -162,10 +166,13 @@ async function goToMercadoPago() {
         </div>
 
         <div
-          v-if="shipping === 'delivery'"
+          v-if="needsShippingForm"
           class="space-y-3 border-b border-white/10 pb-4"
         >
           <p class="text-sm font-semibold text-soft-white">Datos del envío</p>
+          <p v-if="shipping === 'correo_argentino'" class="text-xs text-neutral-500">
+            Incluí calle, altura, piso/depto si aplica, código postal y localidad (necesario para Correo Argentino).
+          </p>
           <label class="block text-xs text-neutral-400">
             Nombre y apellido (opcional)
             <input
@@ -209,7 +216,7 @@ async function goToMercadoPago() {
         <p class="text-sm text-neutral-400">Subtotal productos</p>
         <p class="text-lg font-bold text-soft-white">${{ cart.total.toLocaleString('es-AR') }}</p>
         <p v-if="shippingPrice > 0" class="text-sm text-neutral-400">
-          Envío
+          {{ shipping === 'correo_argentino' ? 'Envío (Correo Argentino)' : 'Envío' }}
           <span class="font-semibold text-soft-white"> +${{ shippingPrice.toLocaleString('es-AR') }} </span>
         </p>
         <p class="text-sm text-neutral-400">Total estimado</p>

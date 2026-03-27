@@ -6,19 +6,22 @@ import { pool } from '../db/pool.js'
 import type { AuthRequest } from '../middleware/auth.middleware.js'
 import {
   clampShippingPriceArs,
+  getShippingCorreoArgentinoPriceArs,
   getShippingDeliveryPriceArs,
-  setShippingDeliveryPriceArs,
+  upsertShippingPrices,
 } from '../services/app-settings.service.js'
 import { sendError, sendSuccess } from '../utils/response.js'
 
 interface SettingsRow extends RowDataPacket {
   shipping_delivery_price_ars: string | number
+  shipping_correo_argentino_price_ars?: string | number
   updated_at: Date
 }
 
 export const getAdminShippingSettings = async (_req: AuthRequest, res: Response) => {
   try {
-    const price = await getShippingDeliveryPriceArs()
+    const delivery = await getShippingDeliveryPriceArs()
+    const correo = await getShippingCorreoArgentinoPriceArs()
     let updatedAt: string | null = null
     try {
       const [rows] = await pool.query<SettingsRow[]>(
@@ -32,8 +35,10 @@ export const getAdminShippingSettings = async (_req: AuthRequest, res: Response)
     return sendSuccess(
       res,
       {
-        shipping_delivery_price_ars: price,
-        env_fallback_ars: env.shippingDeliveryPriceArs,
+        shipping_delivery_price_ars: delivery,
+        shipping_correo_argentino_price_ars: correo,
+        env_fallback_delivery_ars: env.shippingDeliveryPriceArs,
+        env_fallback_correo_ars: env.shippingCorreoArgentinoPriceArs,
         updated_at: updatedAt,
       },
       1,
@@ -46,19 +51,31 @@ export const getAdminShippingSettings = async (_req: AuthRequest, res: Response)
 }
 
 export const patchAdminShippingSettings = async (req: AuthRequest, res: Response) => {
-  const body = req.body as { shipping_delivery_price_ars?: unknown }
-  const price = clampShippingPriceArs(body.shipping_delivery_price_ars)
-  if (price === null) {
+  const body = req.body as {
+    shipping_delivery_price_ars?: unknown
+    shipping_correo_argentino_price_ars?: unknown
+  }
+  const delivery = clampShippingPriceArs(body.shipping_delivery_price_ars)
+  const correo = clampShippingPriceArs(body.shipping_correo_argentino_price_ars)
+  if (delivery === null || correo === null) {
     return sendError(
       res,
-      `shipping_delivery_price_ars debe ser un número entre 0 y 1.000.000 (ARS)`,
+      'Envíá shipping_delivery_price_ars y shipping_correo_argentino_price_ars (números entre 0 y 1.000.000 ARS).',
       400,
     )
   }
 
   try {
-    await setShippingDeliveryPriceArs(price)
-    return sendSuccess(res, { shipping_delivery_price_ars: price }, 1, '')
+    await upsertShippingPrices(delivery, correo)
+    return sendSuccess(
+      res,
+      {
+        shipping_delivery_price_ars: delivery,
+        shipping_correo_argentino_price_ars: correo,
+      },
+      1,
+      '',
+    )
   } catch (e) {
     logMysqlError('patchAdminShippingSettings', e)
     const err = e as { errno?: number; code?: string }
@@ -69,6 +86,13 @@ export const patchAdminShippingSettings = async (req: AuthRequest, res: Response
         500,
       )
     }
-    return sendError(res, 'No se pudo guardar el precio de envío.', 500)
+    if (err.errno === 1054 || err.code === 'ER_BAD_FIELD_ERROR') {
+      return sendError(
+        res,
+        'Falta la columna shipping_correo_argentino_price_ars. Ejecutá la migración 010 en MySQL.',
+        500,
+      )
+    }
+    return sendError(res, 'No se pudieron guardar los precios de envío.', 500)
   }
 }

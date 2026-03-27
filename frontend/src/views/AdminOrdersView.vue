@@ -50,6 +50,7 @@ const fulfillmentBadgeClass = (f: string) => {
 
 const shippingLabel = (o: AdminOrder) => {
   if (o.shipping_method === 'delivery') return 'Envío a domicilio'
+  if (o.shipping_method === 'correo_argentino') return 'Correo Argentino'
   if (o.shipping_method === 'pickup') return 'Retiro en taller'
   return '—'
 }
@@ -68,7 +69,7 @@ const formatDate = (iso: string) => {
 }
 
 const hasShippingDetails = (o: AdminOrder) =>
-  o.shipping_method === 'delivery' &&
+  (o.shipping_method === 'delivery' || o.shipping_method === 'correo_argentino') &&
   Boolean(o.shipping_phone || o.shipping_address || o.shipping_contact_name || o.shipping_notes)
 
 const normalizeOrder = (raw: AdminOrder): AdminOrder => ({
@@ -128,7 +129,8 @@ const itemsSubtotal = (o: AdminOrder) =>
   o.items.reduce((sum, it) => sum + it.unit_price * it.quantity, 0)
 
 const showEnvioLine = (o: AdminOrder) =>
-  o.shipping_method === 'delivery' && (o.shipping_cost ?? 0) > 0
+  (o.shipping_method === 'delivery' || o.shipping_method === 'correo_argentino') &&
+  (o.shipping_cost ?? 0) > 0
 
 const patchFulfillment = async (
   o: AdminOrder,
@@ -342,7 +344,10 @@ onMounted(() => {
                 </div>
               </dl>
             </div>
-            <div v-else-if="o.shipping_method === 'delivery'" class="text-xs text-amber-200/90">
+            <div
+              v-else-if="o.shipping_method === 'delivery' || o.shipping_method === 'correo_argentino'"
+              class="text-xs text-amber-200/90"
+            >
               Envío elegido pero sin datos de contacto en la base (migración 007 o pedido anterior).
             </div>
 

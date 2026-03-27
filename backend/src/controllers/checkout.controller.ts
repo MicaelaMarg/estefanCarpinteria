@@ -3,23 +3,34 @@ import type { PoolConnection } from 'mysql2/promise'
 import type { ResultSetHeader, RowDataPacket } from 'mysql2'
 import { env, toPublicAssetUrl } from '../config/env.js'
 import { pool } from '../db/pool.js'
-import { getShippingDeliveryPriceArs } from '../services/app-settings.service.js'
+import {
+  getShippingCorreoArgentinoPriceArs,
+  getShippingDeliveryPriceArs,
+} from '../services/app-settings.service.js'
 import { getPreferenceApi } from '../services/mercadopago.service.js'
 import { sendError, sendSuccess } from '../utils/response.js'
 import { resolveMercadoPagoNotificationUrl } from '../utils/mpNotificationUrl.js'
 import { unknownErrorMessage } from '../utils/unknownErrorMessage.js'
 
-export type ShippingMode = 'pickup' | 'delivery'
+export type ShippingMode = 'pickup' | 'delivery' | 'correo_argentino'
 
 function parseShippingMode(body: unknown): ShippingMode {
   if (!body || typeof body !== 'object') return 'pickup'
   const s = (body as { shipping?: unknown }).shipping
   if (s === 'delivery') return 'delivery'
+  if (s === 'correo_argentino') return 'correo_argentino'
   return 'pickup'
 }
 
+function needsShippingContactDetails(mode: ShippingMode): boolean {
+  return mode === 'delivery' || mode === 'correo_argentino'
+}
+
 export const getShippingOptions = async (_req: Request, res: Response) => {
-  const deliveryPrice = await getShippingDeliveryPriceArs()
+  const [deliveryPrice, correoPrice] = await Promise.all([
+    getShippingDeliveryPriceArs(),
+    getShippingCorreoArgentinoPriceArs(),
+  ])
   return sendSuccess(
     res,
     {
@@ -37,9 +48,16 @@ export const getShippingOptions = async (_req: Request, res: Response) => {
           description:
             'Costo fijo configurado por el taller; coordinamos fecha y dirección por WhatsApp.',
         },
+        {
+          id: 'correo_argentino' as const,
+          label: 'Envío por Correo Argentino',
+          price: correoPrice,
+          description:
+            'Te lo despachamos por Correo Argentino. Indicá domicilio completo y código postal para el envío.',
+        },
       ],
     },
-    2,
+    3,
     '',
   )
 }
@@ -100,8 +118,11 @@ function buildPreferenceAdditionalInfo(
   shippingMode: ShippingMode,
   d: ParsedShippingDetails,
 ): string | undefined {
-  if (shippingMode !== 'delivery') return undefined
+  if (!needsShippingContactDetails(shippingMode)) return undefined
+  const tipo =
+    shippingMode === 'correo_argentino' ? 'Correo Argentino' : 'Envío a domicilio'
   const parts = [
+    `Tipo: ${tipo}`,
     d.contactName ? `Nombre: ${d.contactName}` : null,
     d.phone ? `Tel: ${d.phone}` : null,
     d.address ? `Envío: ${d.address}` : null,
@@ -200,7 +221,7 @@ export const postCheckout = async (req: Request, res: Response) => {
   if (!parsed) {
     return sendError(
       res,
-      'Carrito inválido: items, shipping y si es delivery shipping_details (teléfono y dirección)',
+      'Carrito inválido: items, shipping y si hay envío shipping_details (teléfono y dirección)',
       400,
     )
   }
@@ -208,16 +229,25 @@ export const postCheckout = async (req: Request, res: Response) => {
   const shippingMode = parseShippingMode(req.body)
   const shippingDetails = parseShippingDetails(req.body)
 
-  if (shippingMode === 'delivery') {
+  if (needsShippingContactDetails(shippingMode)) {
     if (!shippingDetails.phone || shippingDetails.phone.replace(/\D/g, '').length < 6) {
-      return sendError(res, 'Para envío a domicilio indicá un teléfono de contacto válido', 400)
+      return sendError(res, 'Para este envío indicá un teléfono de contacto válido', 400)
     }
     if (!shippingDetails.address || shippingDetails.address.length < 8) {
-      return sendError(res, 'Para envío a domicilio indicá la dirección completa (calle, número, localidad)', 400)
+      return sendError(
+        res,
+        'Indicá la dirección completa (calle, número, CP y localidad). En Correo Argentino el CP es obligatorio.',
+        400,
+      )
     }
   }
 
-  const configuredShip = shippingMode === 'delivery' ? await getShippingDeliveryPriceArs() : 0
+  let configuredShip = 0
+  if (shippingMode === 'delivery') {
+    configuredShip = await getShippingDeliveryPriceArs()
+  } else if (shippingMode === 'correo_argentino') {
+    configuredShip = await getShippingCorreoArgentinoPriceArs()
+  }
   const shippingCost = Number.isFinite(configuredShip) && configuredShip >= 0 ? configuredShip : 0
 
   const merged = new Map<number, number>()
@@ -337,9 +367,10 @@ export const postCheckout = async (req: Request, res: Response) => {
       }))
 
       if (shippingCost > 0) {
+        const correo = shippingMode === 'correo_argentino'
         mpItems.push({
-          id: 'ENVIO',
-          title: 'Envío a domicilio',
+          id: correo ? 'ENVIO_CORREO' : 'ENVIO_DOMICILIO',
+          title: correo ? 'Envío Correo Argentino' : 'Envío a domicilio',
           quantity: 1,
           unit_price: shippingCost,
           currency_id: 'ARS',

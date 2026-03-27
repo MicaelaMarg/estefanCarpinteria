@@ -103,6 +103,11 @@ export const env = {
     0,
     Number(process.env.SHIPPING_DELIVERY_PRICE_ARS ?? 8000) || 0,
   ),
+  /** Respaldo si falta columna Correo en app_settings (migración 010). */
+  shippingCorreoArgentinoPriceArs: Math.max(
+    0,
+    Number(process.env.SHIPPING_CORREO_ARGENTINO_PRICE_ARS ?? 10000) || 0,
+  ),
 }
 
 export function toPublicAssetUrl(assetPath: string): string {
