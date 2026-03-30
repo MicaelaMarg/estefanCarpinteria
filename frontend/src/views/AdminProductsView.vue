@@ -27,6 +27,10 @@ const form = ref({
   image_url: '',
   stock_cargado: 0,
   stock_disponible: 0,
+  shipping_weight_g: 1000,
+  shipping_length_cm: 30,
+  shipping_width_cm: 20,
+  shipping_height_cm: 10,
 })
 
 const ingresoCantidad = ref<number | ''>('')
@@ -51,6 +55,11 @@ const lineaStock = (p: Product) => {
   return `Cargadas ${c} · Disponibles ${d} · Vendidas ${v}`
 }
 
+const lineaEnvio = (p: Product) =>
+  `${Number(p.shipping_weight_g ?? 1000)} g · ${Number(p.shipping_length_cm ?? 30)}×${Number(
+    p.shipping_width_cm ?? 20,
+  )}×${Number(p.shipping_height_cm ?? 10)} cm`
+
 const resetForm = () => {
   if (pickedPreview.value.startsWith('blob:')) {
     URL.revokeObjectURL(pickedPreview.value)
@@ -65,6 +74,10 @@ const resetForm = () => {
     image_url: '',
     stock_cargado: 0,
     stock_disponible: 0,
+    shipping_weight_g: 1000,
+    shipping_length_cm: 30,
+    shipping_width_cm: 20,
+    shipping_height_cm: 10,
   }
   imageFile.value = null
   pickedPreview.value = ''
@@ -138,6 +151,10 @@ const saveProduct = async () => {
     const video_url = form.value.video_url.trim() || null
     const stock_cargado = Math.floor(Number(form.value.stock_cargado)) || 0
     const stock_disponible = Math.floor(Number(form.value.stock_disponible)) || 0
+    const shipping_weight_g = Math.floor(Number(form.value.shipping_weight_g)) || 0
+    const shipping_length_cm = Math.floor(Number(form.value.shipping_length_cm)) || 0
+    const shipping_width_cm = Math.floor(Number(form.value.shipping_width_cm)) || 0
+    const shipping_height_cm = Math.floor(Number(form.value.shipping_height_cm)) || 0
 
     if (!name || !description || !category || !Number.isFinite(price) || price < 0) {
       toast.error('Completá nombre, descripción, categoría y precio válido')
@@ -145,6 +162,15 @@ const saveProduct = async () => {
     }
     if (stock_disponible > stock_cargado) {
       toast.error('Disponible no puede ser mayor que mercadería cargada')
+      return
+    }
+    if (
+      shipping_weight_g < 1 ||
+      shipping_length_cm < 1 ||
+      shipping_width_cm < 1 ||
+      shipping_height_cm < 1
+    ) {
+      toast.error('Completá peso y medidas válidas para preparar el despacho')
       return
     }
 
@@ -158,6 +184,10 @@ const saveProduct = async () => {
         video_url,
         stock_cargado,
         stock_disponible,
+        shipping_weight_g,
+        shipping_length_cm,
+        shipping_width_cm,
+        shipping_height_cm,
       })
       toast.success('Producto actualizado')
     } else {
@@ -170,6 +200,10 @@ const saveProduct = async () => {
         video_url,
         stock_cargado,
         stock_disponible,
+        shipping_weight_g,
+        shipping_length_cm,
+        shipping_width_cm,
+        shipping_height_cm,
       })
       toast.success('Producto creado')
     }
@@ -221,6 +255,10 @@ const startEdit = (p: Product) => {
     image_url: p.image_url,
     stock_cargado: Number(p.stock_cargado ?? 0),
     stock_disponible: Number(p.stock_disponible ?? 0),
+    shipping_weight_g: Number(p.shipping_weight_g ?? 1000),
+    shipping_length_cm: Number(p.shipping_length_cm ?? 30),
+    shipping_width_cm: Number(p.shipping_width_cm ?? 20),
+    shipping_height_cm: Number(p.shipping_height_cm ?? 10),
   }
   imageFile.value = null
   pickedPreview.value = ''
@@ -295,6 +333,7 @@ onMounted(() => {
                 <p class="truncate font-bold text-soft-white">{{ p.name }}</p>
                 <p class="text-sm text-neutral-400">{{ p.category }} · ${{ p.price.toLocaleString('es-AR') }}</p>
                 <p class="text-xs font-medium text-neutral-500">{{ lineaStock(p) }}</p>
+                <p class="text-xs font-medium text-neutral-500">{{ lineaEnvio(p) }}</p>
               </div>
             </div>
             <div class="flex shrink-0 gap-2">
@@ -380,6 +419,11 @@ onMounted(() => {
           <strong>Vendidas</strong> = cargadas − disponibles. Con un producto ya creado podés sumar ingreso sin perder lo vendido.
         </p>
 
+        <p class="rounded-lg border border-white/10 bg-black/40 p-3 text-xs text-neutral-300">
+          <strong>Despacho:</strong> el peso y las dimensiones quedan guardados para preparar envíos y futuras integraciones
+          logísticas.
+        </p>
+
         <div class="rounded-xl border border-white/10 bg-black/35 p-3">
           <p class="text-xs font-semibold text-neutral-400">Vendidas (automático)</p>
           <p class="text-2xl font-black text-industrial-yellow">{{ vendidoPreview }}</p>
@@ -402,6 +446,49 @@ onMounted(() => {
               v-model.number="form.stock_disponible"
               type="number"
               min="0"
+              step="1"
+              class="input-inferno w-full px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-neutral-400">Peso (g)</label>
+            <input
+              v-model.number="form.shipping_weight_g"
+              type="number"
+              min="1"
+              step="1"
+              class="input-inferno w-full px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-neutral-400">Largo (cm)</label>
+            <input
+              v-model.number="form.shipping_length_cm"
+              type="number"
+              min="1"
+              step="1"
+              class="input-inferno w-full px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-neutral-400">Ancho (cm)</label>
+            <input
+              v-model.number="form.shipping_width_cm"
+              type="number"
+              min="1"
+              step="1"
+              class="input-inferno w-full px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-neutral-400">Alto (cm)</label>
+            <input
+              v-model.number="form.shipping_height_cm"
+              type="number"
+              min="1"
               step="1"
               class="input-inferno w-full px-3 py-2 text-sm"
             />

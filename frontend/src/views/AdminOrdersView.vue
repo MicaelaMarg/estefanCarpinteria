@@ -334,6 +334,10 @@ onMounted(() => {
                   <dt class="w-28 shrink-0 text-neutral-500">Teléfono</dt>
                   <dd class="font-mono">{{ o.shipping_phone }}</dd>
                 </div>
+                <div v-if="o.shipping_postal_code" class="flex gap-2">
+                  <dt class="w-28 shrink-0 text-neutral-500">CP</dt>
+                  <dd class="font-mono">{{ o.shipping_postal_code }}</dd>
+                </div>
                 <div v-if="o.shipping_address" class="flex gap-2">
                   <dt class="w-28 shrink-0 text-neutral-500">Dirección</dt>
                   <dd class="whitespace-pre-wrap">{{ o.shipping_address }}</dd>

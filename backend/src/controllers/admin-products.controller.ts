@@ -4,6 +4,7 @@ import { logMysqlError } from '../db/mysqlError.js'
 import { pool } from '../db/pool.js'
 import type { AuthRequest } from '../middleware/auth.middleware.js'
 import type { Product } from '../types/api.js'
+import { buildProductSelectColumns, getProductTableSchema } from '../utils/productTableSchema.js'
 import { sendError, sendSuccess } from '../utils/response.js'
 
 interface CountRow extends RowDataPacket {
@@ -58,12 +59,22 @@ type ProductBody = {
   video_url?: string | null
   stock_cargado?: number
   stock_disponible?: number
+  shipping_weight_g?: number
+  shipping_length_cm?: number
+  shipping_width_cm?: number
+  shipping_height_cm?: number
 }
 
 const nonNegativeInt = (value: unknown, fallback: number) => {
   const n = Math.floor(Number(value))
   if (!Number.isFinite(n) || n < 0) return fallback
   return n
+}
+
+const positiveIntInRange = (value: unknown, fallback: number, min: number, max: number) => {
+  const n = Math.floor(Number(value))
+  if (!Number.isFinite(n) || n < min) return fallback
+  return Math.min(n, max)
 }
 
 const validateCreate = (body: ProductBody) => {
@@ -103,8 +114,26 @@ const validateCreate = (body: ProductBody) => {
     return { error: 'Disponible no puede superar la mercadería cargada' as const }
   }
 
+  const shipping_weight_g = positiveIntInRange(body.shipping_weight_g, 1000, 1, 25_000)
+  const shipping_length_cm = positiveIntInRange(body.shipping_length_cm, 30, 1, 150)
+  const shipping_width_cm = positiveIntInRange(body.shipping_width_cm, 20, 1, 150)
+  const shipping_height_cm = positiveIntInRange(body.shipping_height_cm, 10, 1, 150)
+
   return {
-    value: { name, description, category, price, image_url, video_url, stock_cargado, stock_disponible },
+    value: {
+      name,
+      description,
+      category,
+      price,
+      image_url,
+      video_url,
+      stock_cargado,
+      stock_disponible,
+      shipping_weight_g,
+      shipping_length_cm,
+      shipping_width_cm,
+      shipping_height_cm,
+    },
   }
 }
 
@@ -180,6 +209,30 @@ const validatePatch = (body: ProductBody) => {
     params.push(stock_disponible)
   }
 
+  if (body.shipping_weight_g !== undefined) {
+    const shipping_weight_g = positiveIntInRange(body.shipping_weight_g, 1000, 1, 25_000)
+    updates.push('shipping_weight_g = ?')
+    params.push(shipping_weight_g)
+  }
+
+  if (body.shipping_length_cm !== undefined) {
+    const shipping_length_cm = positiveIntInRange(body.shipping_length_cm, 30, 1, 150)
+    updates.push('shipping_length_cm = ?')
+    params.push(shipping_length_cm)
+  }
+
+  if (body.shipping_width_cm !== undefined) {
+    const shipping_width_cm = positiveIntInRange(body.shipping_width_cm, 20, 1, 150)
+    updates.push('shipping_width_cm = ?')
+    params.push(shipping_width_cm)
+  }
+
+  if (body.shipping_height_cm !== undefined) {
+    const shipping_height_cm = positiveIntInRange(body.shipping_height_cm, 10, 1, 150)
+    updates.push('shipping_height_cm = ?')
+    params.push(shipping_height_cm)
+  }
+
   if (updates.length === 0) {
     return { error: 'Nada que actualizar' as const }
   }
@@ -206,9 +259,11 @@ export const listAdminProducts = async (req: AuthRequest, res: Response) => {
 
     const [countRows] = await pool.query<CountRow[]>('SELECT COUNT(*) AS total FROM products')
     const total = Number(countRows[0]?.total ?? 0)
+    const schema = await getProductTableSchema()
+    const selectColumns = buildProductSelectColumns(schema.columns)
 
     const [rows] = await pool.query<Product[]>(
-      `SELECT id, name, description, price, category, image_url, video_url, stock_cargado, stock_disponible, created_at
+      `SELECT ${selectColumns}
        FROM products
        ORDER BY created_at DESC
        LIMIT ? OFFSET ?`,
@@ -228,13 +283,41 @@ export const createAdminProduct = async (req: AuthRequest, res: Response) => {
     if ('error' in parsed) {
       return sendError(res, String(parsed.error), 400)
     }
-    const { name, description, category, price, image_url, video_url, stock_cargado, stock_disponible } =
-      parsed.value
+    const {
+      name,
+      description,
+      category,
+      price,
+      image_url,
+      video_url,
+      stock_cargado,
+      stock_disponible,
+      shipping_weight_g,
+      shipping_length_cm,
+      shipping_width_cm,
+      shipping_height_cm,
+    } = parsed.value
 
     const [result] = await pool.query<ResultSetHeader>(
-      `INSERT INTO products (name, description, price, category, image_url, video_url, stock_cargado, stock_disponible)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, description, price, category, image_url, video_url, stock_cargado, stock_disponible],
+      `INSERT INTO products (
+         name, description, price, category, image_url, video_url, stock_cargado, stock_disponible,
+         shipping_weight_g, shipping_length_cm, shipping_width_cm, shipping_height_cm
+       )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        name,
+        description,
+        price,
+        category,
+        image_url,
+        video_url,
+        stock_cargado,
+        stock_disponible,
+        shipping_weight_g,
+        shipping_length_cm,
+        shipping_width_cm,
+        shipping_height_cm,
+      ],
     )
 
     const [rows] = await pool.query<Product[]>('SELECT * FROM products WHERE id = ? LIMIT 1', [

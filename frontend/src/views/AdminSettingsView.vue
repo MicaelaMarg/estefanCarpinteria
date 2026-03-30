@@ -99,15 +99,16 @@ onMounted(() => {
       <p class="text-sm font-semibold uppercase tracking-[0.14em] text-industrial-yellow">Administración</p>
       <h1 class="text-3xl font-black text-soft-white">Ajustes</h1>
       <p class="mt-1 text-sm text-neutral-400">
-        Precios fijos que ve el cliente en el carrito y en Mercado Pago (no incluye cotización en línea con Correo
-        Argentino).
+        Precios fijos que ve el cliente en el carrito y en Mercado Pago. Correo Argentino se gestiona con precio fijo
+        y despacho posterior.
       </p>
     </div>
 
     <div class="card-soft max-w-lg p-6">
       <h2 class="text-lg font-bold text-soft-white">Envíos</h2>
       <p class="mt-2 text-sm text-neutral-400">
-        Podés poner 0 si el envío va sin cargo. Los pedidos guardan el método elegido (domicilio, Correo o retiro).
+        Podés poner 0 si el envío va sin cargo. Los pedidos guardan el método elegido y, en Correo Argentino, los datos
+        para despachar luego desde tu operador de Correo Argentino.
       </p>
 
       <div v-if="loading" class="mt-6 text-sm text-neutral-500">Cargando…</div>
@@ -126,7 +127,7 @@ onMounted(() => {
         </div>
         <div>
           <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
-            Envío por Correo Argentino (ARS)
+            Correo Argentino (ARS)
           </label>
           <input
             v-model="correoInput"

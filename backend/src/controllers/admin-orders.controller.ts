@@ -31,6 +31,7 @@ interface OrderRow extends RowDataPacket {
   shipping_phone?: string | null
   shipping_address?: string | null
   shipping_notes?: string | null
+  shipping_postal_code?: string | null
   fulfillment_status?: string | null
 }
 
@@ -73,6 +74,7 @@ function serializeOrder(row: OrderRow) {
     shipping_phone: row.shipping_phone ?? null,
     shipping_address: row.shipping_address ?? null,
     shipping_notes: row.shipping_notes ?? null,
+    shipping_postal_code: row.shipping_postal_code ?? null,
     fulfillment_status,
     created_at:
       row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),

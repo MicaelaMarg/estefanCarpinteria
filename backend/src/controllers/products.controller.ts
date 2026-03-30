@@ -3,6 +3,7 @@ import type { RowDataPacket } from 'mysql2'
 import { logMysqlError } from '../db/mysqlError.js'
 import { pool } from '../db/pool.js'
 import type { Product } from '../types/api.js'
+import { buildProductSelectColumns, getProductTableSchema } from '../utils/productTableSchema.js'
 import { sendError, sendSuccess } from '../utils/response.js'
 
 interface CountRow extends RowDataPacket {
@@ -82,12 +83,15 @@ export const getProducts = async (req: Request, res: Response) => {
     const countQuery = `SELECT COUNT(*) AS total FROM products ${whereClause}`
     const [countRows] = await pool.query<CountRow[]>(countQuery, params)
     const total = countRows[0]?.total ?? 0
+    const schema = await getProductTableSchema()
+    const selectColumns = buildProductSelectColumns(schema.columns)
+    const orderBy = schema.hasCreatedAt ? 'created_at DESC' : 'id DESC'
 
     const productsQuery = `
-      SELECT id, name, description, price, category, image_url, video_url, stock_cargado, stock_disponible, created_at
+      SELECT ${selectColumns}
       FROM products
       ${whereClause}
-      ORDER BY created_at DESC
+      ORDER BY ${orderBy}
       LIMIT ? OFFSET ?
     `
 
@@ -107,7 +111,12 @@ export const getProductById = async (req: Request, res: Response) => {
       return sendError(res, 'ID de producto inválido', 400)
     }
 
-    const [rows] = await pool.query<Product[]>('SELECT * FROM products WHERE id = ? LIMIT 1', [id])
+    const schema = await getProductTableSchema()
+    const selectColumns = buildProductSelectColumns(schema.columns)
+    const [rows] = await pool.query<Product[]>(
+      `SELECT ${selectColumns} FROM products WHERE id = ? LIMIT 1`,
+      [id],
+    )
     const product = rows[0]
 
     if (!product) {

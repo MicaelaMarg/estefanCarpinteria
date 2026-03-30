@@ -17,6 +17,7 @@ const deliveryName = ref('')
 const deliveryPhone = ref('')
 const deliveryAddress = ref('')
 const deliveryNotes = ref('')
+const deliveryPostalCode = ref('')
 const shippingModes = ref<ShippingModeOption[]>([
   { id: 'pickup', label: 'Retiro en taller', price: 0, description: '' },
 ])
@@ -38,9 +39,7 @@ const shippingPrice = computed(() => {
 
 const grandTotal = computed(() => cart.total + shippingPrice.value)
 
-const needsShippingForm = computed(
-  () => shipping.value === 'delivery' || shipping.value === 'correo_argentino',
-)
+const needsShippingForm = computed(() => shipping.value === 'delivery' || shipping.value === 'correo_argentino')
 
 async function goToMercadoPago() {
   if (cart.lines.length === 0) return
@@ -56,6 +55,13 @@ async function goToMercadoPago() {
       return
     }
   }
+  if (shipping.value === 'correo_argentino') {
+    const postalCode = deliveryPostalCode.value.trim().toUpperCase().replace(/\s+/g, '')
+    if (postalCode.length < 4) {
+      toast.error('Ingresá un código postal para Correo Argentino.')
+      return
+    }
+  }
   paying.value = true
   try {
     const items = cart.lines.map((l) => ({ id: l.productId, quantity: l.quantity }))
@@ -65,6 +71,7 @@ async function goToMercadoPago() {
           phone: deliveryPhone.value.trim(),
           address: deliveryAddress.value.trim(),
           notes: deliveryNotes.value.trim() || undefined,
+          postal_code: shipping.value === 'correo_argentino' ? deliveryPostalCode.value.trim() : undefined,
         }
       : undefined
     const { init_point } = await postCheckout(items, shipping.value, details)
@@ -171,8 +178,19 @@ async function goToMercadoPago() {
         >
           <p class="text-sm font-semibold text-soft-white">Datos del envío</p>
           <p v-if="shipping === 'correo_argentino'" class="text-xs text-neutral-500">
-            Incluí calle, altura, piso/depto si aplica, código postal y localidad (necesario para Correo Argentino).
+            Cargá bien la dirección y el código postal. Después del pago gestionamos el despacho por Correo
+            Argentino con estos datos.
           </p>
+          <label v-if="shipping === 'correo_argentino'" class="block text-xs text-neutral-400">
+            Código postal <span class="text-inferno-red">*</span>
+            <input
+              v-model="deliveryPostalCode"
+              type="text"
+              class="input-inferno mt-1 w-full px-3 py-2 text-sm text-soft-white"
+              placeholder="Ej. B7600 o 7600"
+              autocomplete="postal-code"
+            />
+          </label>
           <label class="block text-xs text-neutral-400">
             Nombre y apellido (opcional)
             <input
@@ -234,6 +252,9 @@ async function goToMercadoPago() {
         <p class="text-xs text-neutral-500">
           Serás redirigido al checkout seguro de Mercado Pago. El pedido queda pendiente hasta que el
           pago se acredite.
+        </p>
+        <p v-if="shipping === 'correo_argentino'" class="text-xs text-neutral-500">
+          Después del pago, gestionamos el despacho por Correo Argentino con los datos que cargaste.
         </p>
       </aside>
     </div>

@@ -19,12 +19,35 @@ export interface CheckoutResponse {
   order_id: number
 }
 
+export interface ShippingQuoteRate {
+  delivered_type: string
+  product_type: string
+  product_name: string
+  price: number
+  delivery_time_min: string
+  delivery_time_max: string
+}
+
+export interface ShippingQuoteResponse {
+  source: 'fallback'
+  valid_to: string | null
+  selected_rate: ShippingQuoteRate
+  rates: ShippingQuoteRate[]
+  parcel: {
+    weightG: number
+    heightCm: number
+    widthCm: number
+    lengthCm: number
+  }
+}
+
 /** Datos que el cliente completa si elige envío a domicilio */
 export interface ShippingDetailsPayload {
   contact_name?: string
   phone?: string
   address?: string
   notes?: string
+  postal_code?: string
 }
 
 export async function getShippingOptions(): Promise<ShippingOptionsPayload> {

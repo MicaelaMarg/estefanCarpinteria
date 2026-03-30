@@ -1,8 +1,11 @@
 import axios from 'axios'
 import { toast } from 'vue3-toastify'
 
+const DEFAULT_API_BASE_URL = 'https://carpinteria-backend-production-d5bb.up.railway.app/api'
+
 const configApi = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api',
+  // If no frontend env is configured, fall back to the deployed API so the catalog still works.
+  baseURL: import.meta.env.VITE_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL,
   timeout: 15000,
 })
 

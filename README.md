@@ -131,6 +131,28 @@ npm run build
 npm run start
 ```
 
+### Entorno local rapido
+
+Si querés levantar solo el frontend y usar el backend desplegado en Railway:
+
+```bash
+cp frontend/.env.example frontend/.env
+cd frontend
+npm run dev
+```
+
+Si querés desarrollo full local:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+Luego ajustá:
+
+- `backend/.env`: tu MySQL local o `DATABASE_URL` remota
+- `frontend/.env`: `VITE_API_BASE_URL=http://localhost:4000/api`
+
 ## Endpoints API
 
 - `GET /api/products`
@@ -194,6 +216,8 @@ Crear **3 servicios** en Railway:
 - `ADMIN_EMAIL`, `ADMIN_PASSWORD` o `ADMIN_PASSWORD_HASH`
 - `PUBLIC_BASE_URL` = URL pública del backend (imágenes subidas)
 - `UPLOAD_DIR` + **Volume** montado en esa ruta (si no, las imágenes se pierden al redeploy)
+- `PAQAR_API_BASE_URL`, `PAQAR_AGREEMENT`, `PAQAR_API_KEY`
+  para integrar la API oficial de PAQ.AR v2 (auth, órdenes, etiquetas y tracking)
 
 ### Variables frontend en Railway
 

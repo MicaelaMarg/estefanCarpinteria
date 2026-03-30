@@ -108,6 +108,11 @@ export const env = {
     0,
     Number(process.env.SHIPPING_CORREO_ARGENTINO_PRICE_ARS ?? 10000) || 0,
   ),
+  paqArApiBaseUrl: (process.env.PAQAR_API_BASE_URL ?? 'https://api.correoargentino.com.ar/paqar/v1')
+    .trim()
+    .replace(/\/$/, ''),
+  paqArAgreement: (process.env.PAQAR_AGREEMENT ?? '').trim(),
+  paqArApiKey: (process.env.PAQAR_API_KEY ?? '').trim(),
 }
 
 export function toPublicAssetUrl(assetPath: string): string {

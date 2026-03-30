@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS products (
   video_url VARCHAR(2048) NULL,
   stock_cargado INT NOT NULL DEFAULT 0,
   stock_disponible INT NOT NULL DEFAULT 0,
+  shipping_weight_g INT NOT NULL DEFAULT 1000,
+  shipping_length_cm INT NOT NULL DEFAULT 30,
+  shipping_width_cm INT NOT NULL DEFAULT 20,
+  shipping_height_cm INT NOT NULL DEFAULT 10,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -32,6 +36,7 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_phone VARCHAR(40) NULL,
   shipping_address TEXT NULL,
   shipping_notes VARCHAR(500) NULL,
+  shipping_postal_code VARCHAR(20) NULL,
   fulfillment_status ENUM('pendiente', 'listo', 'enviado', 'entregado') NOT NULL DEFAULT 'pendiente',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

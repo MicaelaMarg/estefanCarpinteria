@@ -22,6 +22,7 @@ export interface AdminOrder {
   shipping_phone: string | null
   shipping_address: string | null
   shipping_notes: string | null
+  shipping_postal_code: string | null
   fulfillment_status: OrderFulfillmentStatus
   created_at: string
   updated_at: string

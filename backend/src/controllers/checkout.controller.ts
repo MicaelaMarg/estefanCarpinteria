@@ -7,7 +7,9 @@ import {
   getShippingCorreoArgentinoPriceArs,
   getShippingDeliveryPriceArs,
 } from '../services/app-settings.service.js'
+import { isPaqArConfigured } from '../services/paqar.service.js'
 import { getPreferenceApi } from '../services/mercadopago.service.js'
+import { buildParcelMetrics } from '../utils/parcelMetrics.js'
 import { sendError, sendSuccess } from '../utils/response.js'
 import { resolveMercadoPagoNotificationUrl } from '../utils/mpNotificationUrl.js'
 import { unknownErrorMessage } from '../utils/unknownErrorMessage.js'
@@ -31,6 +33,9 @@ export const getShippingOptions = async (_req: Request, res: Response) => {
     getShippingDeliveryPriceArs(),
     getShippingCorreoArgentinoPriceArs(),
   ])
+  const correoDescription = isPaqArConfigured()
+    ? 'Usamos un precio fijo en la tienda y después gestionamos el despacho por PAQ.AR con los datos del pedido.'
+    : 'Usamos un precio fijo configurable y gestionamos el despacho manualmente desde Correo Argentino.'
   return sendSuccess(
     res,
     {
@@ -50,10 +55,9 @@ export const getShippingOptions = async (_req: Request, res: Response) => {
         },
         {
           id: 'correo_argentino' as const,
-          label: 'Envío por Correo Argentino',
+          label: 'Correo Argentino',
           price: correoPrice,
-          description:
-            'Te lo despachamos por Correo Argentino. Indicá domicilio completo y código postal para el envío.',
+          description: correoDescription,
         },
       ],
     },
@@ -73,6 +77,10 @@ interface ProductRow extends RowDataPacket {
   price: string
   stock_disponible: number
   image_url: string
+  shipping_weight_g: number
+  shipping_length_cm: number
+  shipping_width_cm: number
+  shipping_height_cm: number
 }
 
 const MAX_LINES = 40
@@ -88,6 +96,7 @@ interface ParsedShippingDetails {
   phone: string | null
   address: string | null
   notes: string | null
+  postalCode: string | null
 }
 
 function parseShippingDetails(body: unknown): ParsedShippingDetails {
@@ -96,6 +105,7 @@ function parseShippingDetails(body: unknown): ParsedShippingDetails {
     phone: null,
     address: null,
     notes: null,
+    postalCode: null,
   }
   if (!body || typeof body !== 'object') return empty
   const sd = (body as { shipping_details?: unknown }).shipping_details
@@ -111,6 +121,7 @@ function parseShippingDetails(body: unknown): ParsedShippingDetails {
     phone: clip(o.phone, 40),
     address: clip(o.address, 4000),
     notes: clip(o.notes, 500),
+    postalCode: clip(o.postal_code, 20)?.toUpperCase().replace(/\s+/g, '') ?? null,
   }
 }
 
@@ -119,13 +130,13 @@ function buildPreferenceAdditionalInfo(
   d: ParsedShippingDetails,
 ): string | undefined {
   if (!needsShippingContactDetails(shippingMode)) return undefined
-  const tipo =
-    shippingMode === 'correo_argentino' ? 'Correo Argentino' : 'Envío a domicilio'
+  const tipo = shippingMode === 'correo_argentino' ? 'Correo Argentino' : 'Envío a domicilio'
   const parts = [
     `Tipo: ${tipo}`,
     d.contactName ? `Nombre: ${d.contactName}` : null,
     d.phone ? `Tel: ${d.phone}` : null,
     d.address ? `Envío: ${d.address}` : null,
+    d.postalCode ? `CP: ${d.postalCode}` : null,
     d.notes ? `Notas: ${d.notes}` : null,
   ].filter(Boolean) as string[]
   if (parts.length === 0) return undefined
@@ -133,7 +144,7 @@ function buildPreferenceAdditionalInfo(
   return s.length > 500 ? `${s.slice(0, 497)}…` : s
 }
 
-/** Inserta pedido pending; reintenta con menos columnas si faltan migraciones 006/007. */
+/** Inserta pedido pending; reintenta con menos columnas si faltan migraciones 006/007/012. */
 async function insertPendingOrder(
   conn: PoolConnection,
   params: {
@@ -146,13 +157,13 @@ async function insertPendingOrder(
   const { totalAmount, shippingMode, shippingCost, details } = params
   const t = totalAmount.toFixed(2)
   const sc = shippingCost.toFixed(2)
-  const { contactName, phone, address, notes } = details
+  const { contactName, phone, address, notes, postalCode } = details
 
   const attempts: { sql: string; args: Array<string | null> }[] = [
     {
-      sql: `INSERT INTO orders (status, total_amount, currency_id, shipping_method, shipping_cost, shipping_contact_name, shipping_phone, shipping_address, shipping_notes)
-            VALUES ('pending', ?, 'ARS', ?, ?, ?, ?, ?, ?)`,
-      args: [t, shippingMode, sc, contactName, phone, address, notes],
+      sql: `INSERT INTO orders (status, total_amount, currency_id, shipping_method, shipping_cost, shipping_contact_name, shipping_phone, shipping_address, shipping_notes, shipping_postal_code)
+            VALUES ('pending', ?, 'ARS', ?, ?, ?, ?, ?, ?, ?)`,
+      args: [t, shippingMode, sc, contactName, phone, address, notes, postalCode],
     },
     {
       sql: `INSERT INTO orders (status, total_amount, currency_id, shipping_method, shipping_cost) VALUES ('pending', ?, 'ARS', ?, ?)`,
@@ -171,7 +182,7 @@ async function insertPendingOrder(
       const [r] = (await conn.query(a.sql, a.args)) as [ResultSetHeader, unknown]
       if (i > 0) {
         console.warn(
-          `[checkout] INSERT orders nivel ${i + 1}/${attempts.length}; corré migraciones 006/007 para datos de envío completos`,
+          `[checkout] INSERT orders nivel ${i + 1}/${attempts.length}; corré migraciones 006/007/012 para datos de envío completos`,
         )
       }
       return r.insertId
@@ -200,6 +211,82 @@ function parseCartItems(body: unknown): { id: number; quantity: number }[] | nul
     out.push({ id: pid, quantity: qty })
   }
   return out
+}
+
+async function loadCheckoutProducts(uniqueIds: number[]): Promise<ProductRow[]> {
+  const placeholders = uniqueIds.map(() => '?').join(',')
+  const sql = `
+    SELECT id, name, price, stock_disponible, image_url, shipping_weight_g, shipping_length_cm, shipping_width_cm, shipping_height_cm
+    FROM products
+    WHERE id IN (${placeholders})
+  `
+  const [rows] = await pool.query<ProductRow[]>(sql, uniqueIds)
+  return rows
+}
+
+async function buildQuoteParcel(linesInput: { id: number; quantity: number }[]) {
+  const uniqueIds = linesInput.map((line) => line.id)
+  const productRows = await loadCheckoutProducts(uniqueIds)
+  if (productRows.length !== uniqueIds.length) {
+    throw new Error('No pudimos leer uno o más productos del carrito')
+  }
+
+  const byId = new Map(productRows.map((row) => [row.id, row]))
+  return buildParcelMetrics(
+    linesInput.map((line) => {
+      const product = byId.get(line.id)
+      if (!product) {
+        throw new Error('Producto no encontrado para preparar el envío')
+      }
+      return {
+        quantity: line.quantity,
+        shipping_weight_g: product.shipping_weight_g,
+        shipping_height_cm: product.shipping_height_cm,
+        shipping_width_cm: product.shipping_width_cm,
+        shipping_length_cm: product.shipping_length_cm,
+      }
+    }),
+  )
+}
+
+export const postShippingQuote = async (req: Request, res: Response) => {
+  const parsed = parseCartItems(req.body)
+  if (!parsed) {
+    return sendError(res, 'Carrito inválido para preparar envío', 400)
+  }
+
+  const shippingDetails = parseShippingDetails(req.body)
+  if (!shippingDetails.postalCode) {
+    return sendError(res, 'Ingresá un código postal para continuar', 400)
+  }
+
+  try {
+    const fallbackPrice = await getShippingCorreoArgentinoPriceArs()
+    const parcel = await buildQuoteParcel(parsed)
+    return sendSuccess(
+      res,
+      {
+        source: 'fallback',
+        valid_to: null,
+        selected_rate: {
+          delivered_type: 'D',
+          product_type: 'MANUAL',
+          product_name: 'Correo Argentino (precio fijo)',
+          price: fallbackPrice,
+          delivery_time_min: '',
+          delivery_time_max: '',
+        },
+        rates: [],
+        parcel,
+      },
+      1,
+      isPaqArConfigured()
+        ? 'La API oficial de PAQ.AR no publica cotización en este flujo; usamos el precio fijo configurado.'
+        : 'PAQ.AR no está configurado; usamos el precio fijo actual.',
+    )
+  } catch (e) {
+    return sendError(res, unknownErrorMessage(e, 'No se pudo preparar el envío'), 502)
+  }
 }
 
 export const postCheckout = async (req: Request, res: Response) => {
@@ -236,9 +323,12 @@ export const postCheckout = async (req: Request, res: Response) => {
     if (!shippingDetails.address || shippingDetails.address.length < 8) {
       return sendError(
         res,
-        'Indicá la dirección completa (calle, número, CP y localidad). En Correo Argentino el CP es obligatorio.',
+        'Indicá la dirección completa (calle, número, CP y localidad). Para Correo Argentino el CP es obligatorio.',
         400,
       )
+    }
+    if (shippingMode === 'correo_argentino' && !shippingDetails.postalCode) {
+      return sendError(res, 'Para Correo Argentino indicá un código postal válido', 400)
     }
   }
 
@@ -268,7 +358,7 @@ export const postCheckout = async (req: Request, res: Response) => {
 
     const placeholders = uniqueIds.map(() => '?').join(',')
     const [productRows] = await conn.query<ProductRow[]>(
-      `SELECT id, name, price, stock_disponible, image_url
+      `SELECT id, name, price, stock_disponible, image_url, shipping_weight_g, shipping_length_cm, shipping_width_cm, shipping_height_cm
        FROM products
        WHERE id IN (${placeholders})
        FOR UPDATE`,
