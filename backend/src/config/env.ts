@@ -108,6 +108,16 @@ export const env = {
     0,
     Number(process.env.SHIPPING_CORREO_ARGENTINO_PRICE_ARS ?? 10000) || 0,
   ),
+  miCorreoApiBaseUrl: (process.env.MICORREO_API_BASE_URL ?? 'https://api.correoargentino.com.ar/micorreo/v1')
+    .trim()
+    .replace(/\/$/, ''),
+  miCorreoApiUser: (process.env.MICORREO_API_USER ?? '').trim(),
+  miCorreoApiPassword: (process.env.MICORREO_API_PASSWORD ?? '').trim(),
+  miCorreoCustomerId: (process.env.MICORREO_CUSTOMER_ID ?? '').trim(),
+  miCorreoPostalCodeOrigin: (process.env.MICORREO_POSTAL_CODE_ORIGIN ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, ''),
   paqArApiBaseUrl: (process.env.PAQAR_API_BASE_URL ?? 'https://api.correoargentino.com.ar/paqar/v1')
     .trim()
     .replace(/\/$/, ''),

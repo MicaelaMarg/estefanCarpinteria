@@ -7,6 +7,13 @@ import {
   getShippingCorreoArgentinoPriceArs,
   getShippingDeliveryPriceArs,
 } from '../services/app-settings.service.js'
+import {
+  buildRateId,
+  findMiCorreoRateById,
+  isMiCorreoConfigured,
+  quoteMiCorreoRates,
+  selectMiCorreoRate,
+} from '../services/micorreo.service.js'
 import { isPaqArConfigured } from '../services/paqar.service.js'
 import { getPreferenceApi } from '../services/mercadopago.service.js'
 import { buildParcelMetrics } from '../utils/parcelMetrics.js'
@@ -33,9 +40,12 @@ export const getShippingOptions = async (_req: Request, res: Response) => {
     getShippingDeliveryPriceArs(),
     getShippingCorreoArgentinoPriceArs(),
   ])
-  const correoDescription = isPaqArConfigured()
-    ? 'Usamos un precio fijo en la tienda y después gestionamos el despacho por PAQ.AR con los datos del pedido.'
-    : 'Usamos un precio fijo configurable y gestionamos el despacho manualmente desde Correo Argentino.'
+  const correoUsesLiveQuote = isMiCorreoConfigured()
+  const correoDescription = correoUsesLiveQuote
+    ? 'Cotizamos en vivo al ingresar el código postal y validamos la tarifa exacta antes de enviar a Mercado Pago.'
+    : isPaqArConfigured()
+      ? 'Usamos un precio fijo en la tienda y después gestionamos el despacho por PAQ.AR con los datos del pedido.'
+      : 'Usamos un precio fijo configurable y gestionamos el despacho manualmente desde Correo Argentino.'
   return sendSuccess(
     res,
     {
@@ -56,7 +66,7 @@ export const getShippingOptions = async (_req: Request, res: Response) => {
         {
           id: 'correo_argentino' as const,
           label: 'Correo Argentino',
-          price: correoPrice,
+          price: correoUsesLiveQuote ? 0 : correoPrice,
           description: correoDescription,
         },
       ],
@@ -99,6 +109,13 @@ interface ParsedShippingDetails {
   postalCode: string | null
 }
 
+interface ParsedCorreoRateSelection {
+  rateId: string | null
+  deliveredType: string | null
+  productType: string | null
+  productName: string | null
+}
+
 function parseShippingDetails(body: unknown): ParsedShippingDetails {
   const empty: ParsedShippingDetails = {
     contactName: null,
@@ -125,14 +142,42 @@ function parseShippingDetails(body: unknown): ParsedShippingDetails {
   }
 }
 
+function parseSelectedCorreoRate(body: unknown): ParsedCorreoRateSelection {
+  const empty: ParsedCorreoRateSelection = {
+    rateId: null,
+    deliveredType: null,
+    productType: null,
+    productName: null,
+  }
+  if (!body || typeof body !== 'object') return empty
+  const sd = (body as { shipping_details?: unknown }).shipping_details
+  if (!sd || typeof sd !== 'object') return empty
+  const qr = (sd as Record<string, unknown>).quote_rate
+  if (!qr || typeof qr !== 'object') return empty
+  const clip = (v: unknown, max: number): string | null => {
+    const t = String(v ?? '').trim()
+    if (!t) return null
+    return t.slice(0, max)
+  }
+  const rate = qr as Record<string, unknown>
+  return {
+    rateId: clip(rate.rate_id, 80) ?? null,
+    deliveredType: clip(rate.delivered_type, 10)?.toUpperCase() ?? null,
+    productType: clip(rate.product_type, 40)?.toUpperCase() ?? null,
+    productName: clip(rate.product_name, 180) ?? null,
+  }
+}
+
 function buildPreferenceAdditionalInfo(
   shippingMode: ShippingMode,
   d: ParsedShippingDetails,
+  selectedRateLabel?: string | null,
 ): string | undefined {
   if (!needsShippingContactDetails(shippingMode)) return undefined
   const tipo = shippingMode === 'correo_argentino' ? 'Correo Argentino' : 'Envío a domicilio'
   const parts = [
     `Tipo: ${tipo}`,
+    selectedRateLabel ? `Tarifa: ${selectedRateLabel}` : null,
     d.contactName ? `Nombre: ${d.contactName}` : null,
     d.phone ? `Tel: ${d.phone}` : null,
     d.address ? `Envío: ${d.address}` : null,
@@ -261,14 +306,54 @@ export const postShippingQuote = async (req: Request, res: Response) => {
   }
 
   try {
-    const fallbackPrice = await getShippingCorreoArgentinoPriceArs()
     const parcel = await buildQuoteParcel(parsed)
+    if (isMiCorreoConfigured()) {
+      const liveQuote = await quoteMiCorreoRates({
+        destinationPostalCode: shippingDetails.postalCode,
+        parcel,
+        deliveredType: 'D',
+      })
+      const selectedRate = selectMiCorreoRate(liveQuote.rates)
+      if (!selectedRate) {
+        return sendError(res, 'Correo Argentino no devolvió tarifas disponibles', 502)
+      }
+      return sendSuccess(
+        res,
+        {
+          source: 'micorreo',
+          valid_to: liveQuote.validTo,
+          selected_rate: {
+            id: selectedRate.id,
+            delivered_type: selectedRate.deliveredType,
+            product_type: selectedRate.productType,
+            product_name: selectedRate.productName,
+            price: selectedRate.price,
+            delivery_time_min: selectedRate.deliveryTimeMin,
+            delivery_time_max: selectedRate.deliveryTimeMax,
+          },
+          rates: liveQuote.rates.map((rate) => ({
+            id: rate.id,
+            delivered_type: rate.deliveredType,
+            product_type: rate.productType,
+            product_name: rate.productName,
+            price: rate.price,
+            delivery_time_min: rate.deliveryTimeMin,
+            delivery_time_max: rate.deliveryTimeMax,
+          })),
+          parcel,
+        },
+        liveQuote.rates.length,
+        'Cotización actualizada desde Correo Argentino.',
+      )
+    }
+    const fallbackPrice = await getShippingCorreoArgentinoPriceArs()
     return sendSuccess(
       res,
       {
         source: 'fallback',
         valid_to: null,
         selected_rate: {
+          id: buildRateId({ deliveredType: 'D', productType: 'MANUAL', price: fallbackPrice }),
           delivered_type: 'D',
           product_type: 'MANUAL',
           product_name: 'Correo Argentino (precio fijo)',
@@ -285,6 +370,7 @@ export const postShippingQuote = async (req: Request, res: Response) => {
         : 'PAQ.AR no está configurado; usamos el precio fijo actual.',
     )
   } catch (e) {
+    console.error(`[MiCorreo] cotización fallida: ${unknownErrorMessage(e, 'No se pudo preparar el envío')}`)
     return sendError(res, unknownErrorMessage(e, 'No se pudo preparar el envío'), 502)
   }
 }
@@ -315,6 +401,7 @@ export const postCheckout = async (req: Request, res: Response) => {
 
   const shippingMode = parseShippingMode(req.body)
   const shippingDetails = parseShippingDetails(req.body)
+  const selectedCorreoRate = parseSelectedCorreoRate(req.body)
 
   if (needsShippingContactDetails(shippingMode)) {
     if (!shippingDetails.phone || shippingDetails.phone.replace(/\D/g, '').length < 6) {
@@ -331,14 +418,6 @@ export const postCheckout = async (req: Request, res: Response) => {
       return sendError(res, 'Para Correo Argentino indicá un código postal válido', 400)
     }
   }
-
-  let configuredShip = 0
-  if (shippingMode === 'delivery') {
-    configuredShip = await getShippingDeliveryPriceArs()
-  } else if (shippingMode === 'correo_argentino') {
-    configuredShip = await getShippingCorreoArgentinoPriceArs()
-  }
-  const shippingCost = Number.isFinite(configuredShip) && configuredShip >= 0 ? configuredShip : 0
 
   const merged = new Map<number, number>()
   for (const line of parsed) {
@@ -372,6 +451,8 @@ export const postCheckout = async (req: Request, res: Response) => {
 
     const byId = new Map(productRows.map((p) => [p.id, p]))
     let totalAmount = 0
+    let shippingCost = 0
+    let selectedRateLabel: string | null = null
     const lines: { productId: number; quantity: number; unitPrice: number; title: string; picture?: string }[] =
       []
 
@@ -404,6 +485,66 @@ export const postCheckout = async (req: Request, res: Response) => {
         title: p.name.slice(0, 180),
         picture: pic.startsWith('http') ? pic : undefined,
       })
+    }
+
+    if (shippingMode === 'delivery') {
+      const configuredShip = await getShippingDeliveryPriceArs()
+      shippingCost = Number.isFinite(configuredShip) && configuredShip >= 0 ? configuredShip : 0
+    } else if (shippingMode === 'correo_argentino') {
+      if (isMiCorreoConfigured()) {
+        const parcel = buildParcelMetrics(
+          linesInput.map((line) => {
+            const product = byId.get(line.id)
+            if (!product) {
+              throw new Error('Producto no encontrado para preparar el envío')
+            }
+            return {
+              quantity: line.quantity,
+              shipping_weight_g: product.shipping_weight_g,
+              shipping_height_cm: product.shipping_height_cm,
+              shipping_width_cm: product.shipping_width_cm,
+              shipping_length_cm: product.shipping_length_cm,
+            }
+          }),
+        )
+        const liveQuote = await quoteMiCorreoRates({
+          destinationPostalCode: shippingDetails.postalCode ?? '',
+          parcel,
+          deliveredType: 'D',
+        })
+        const exactRate = findMiCorreoRateById(liveQuote.rates, selectedCorreoRate.rateId)
+        let selectedRate = exactRate
+
+        if (!selectedRate) {
+          selectedRate = selectMiCorreoRate(liveQuote.rates, selectedCorreoRate)
+        }
+
+        if (!selectedRate) {
+          console.error('[MiCorreo] cotización fallida: no hay tarifa vigente para continuar el checkout')
+          await conn.rollback()
+          return sendError(res, 'No pudimos validar una tarifa vigente de Correo Argentino', 409)
+        }
+
+        if (selectedCorreoRate.rateId && !exactRate) {
+          if (selectedCorreoRate.deliveredType || selectedCorreoRate.productType || selectedCorreoRate.productName) {
+            console.warn(
+              `[MiCorreo] diferencia en recotizacion: rate_id ${selectedCorreoRate.rateId} no existe; usando ${selectedRate.id} (${selectedRate.price.toFixed(2)})`,
+            )
+          } else {
+            console.error(
+              `[MiCorreo] cotización fallida: rate_id ${selectedCorreoRate.rateId} inexistente en la recotización`,
+            )
+            await conn.rollback()
+            return sendError(res, 'La tarifa de Correo Argentino elegida ya no está disponible', 409)
+          }
+        }
+
+        shippingCost = selectedRate.price
+        selectedRateLabel = selectedRate.productName
+      } else {
+        const configuredShip = await getShippingCorreoArgentinoPriceArs()
+        shippingCost = Number.isFinite(configuredShip) && configuredShip >= 0 ? configuredShip : 0
+      }
     }
 
     totalAmount += shippingCost
@@ -467,7 +608,7 @@ export const postCheckout = async (req: Request, res: Response) => {
         })
       }
 
-      const additionalInfo = buildPreferenceAdditionalInfo(shippingMode, shippingDetails)
+      const additionalInfo = buildPreferenceAdditionalInfo(shippingMode, shippingDetails, selectedRateLabel)
 
       const pref = await preferenceApi.create({
         body: {

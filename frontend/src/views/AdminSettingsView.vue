@@ -99,16 +99,16 @@ onMounted(() => {
       <p class="text-sm font-semibold uppercase tracking-[0.14em] text-industrial-yellow">Administración</p>
       <h1 class="text-3xl font-black text-soft-white">Ajustes</h1>
       <p class="mt-1 text-sm text-neutral-400">
-        Precios fijos que ve el cliente en el carrito y en Mercado Pago. Correo Argentino se gestiona con precio fijo
-        y despacho posterior.
+        Precios base que ve el cliente en el carrito y en Mercado Pago. Si activás MiCorreo API, Correo Argentino se
+        cotiza en vivo y este valor queda como respaldo.
       </p>
     </div>
 
     <div class="card-soft max-w-lg p-6">
       <h2 class="text-lg font-bold text-soft-white">Envíos</h2>
       <p class="mt-2 text-sm text-neutral-400">
-        Podés poner 0 si el envío va sin cargo. Los pedidos guardan el método elegido y, en Correo Argentino, los datos
-        para despachar luego desde tu operador de Correo Argentino.
+        Podés poner 0 si el envío va sin cargo. Los pedidos guardan el método elegido y, en Correo Argentino, este
+        precio funciona como respaldo si la cotización en vivo no está configurada.
       </p>
 
       <div v-if="loading" class="mt-6 text-sm text-neutral-500">Cargando…</div>

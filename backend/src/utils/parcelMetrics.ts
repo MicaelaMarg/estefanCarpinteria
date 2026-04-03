@@ -15,6 +15,10 @@ export interface ProductParcelInput {
 
 const MAX_WEIGHT_G = 25_000
 const MAX_DIMENSION_CM = 150
+const DEFAULT_WEIGHT_G = 1000
+const DEFAULT_HEIGHT_CM = 10
+const DEFAULT_WIDTH_CM = 20
+const DEFAULT_LENGTH_CM = 30
 
 function clampPositiveInt(value: number, fallback: number): number {
   const n = Math.floor(Number(value))
@@ -24,7 +28,12 @@ function clampPositiveInt(value: number, fallback: number): number {
 
 export function buildParcelMetrics(lines: ProductParcelInput[]): ParcelMetrics {
   if (lines.length === 0) {
-    return { weightG: 1000, heightCm: 10, widthCm: 20, lengthCm: 30 }
+    return {
+      weightG: DEFAULT_WEIGHT_G,
+      heightCm: DEFAULT_HEIGHT_CM,
+      widthCm: DEFAULT_WIDTH_CM,
+      lengthCm: DEFAULT_LENGTH_CM,
+    }
   }
 
   let weightG = 0
@@ -34,10 +43,10 @@ export function buildParcelMetrics(lines: ProductParcelInput[]): ParcelMetrics {
 
   for (const line of lines) {
     const quantity = clampPositiveInt(line.quantity, 1)
-    const productWeight = clampPositiveInt(line.shipping_weight_g, 1000)
-    const productHeight = clampPositiveInt(line.shipping_height_cm, 10)
-    const productWidth = clampPositiveInt(line.shipping_width_cm, 20)
-    const productLength = clampPositiveInt(line.shipping_length_cm, 30)
+    const productWeight = clampPositiveInt(line.shipping_weight_g, DEFAULT_WEIGHT_G)
+    const productHeight = clampPositiveInt(line.shipping_height_cm, DEFAULT_HEIGHT_CM)
+    const productWidth = clampPositiveInt(line.shipping_width_cm, DEFAULT_WIDTH_CM)
+    const productLength = clampPositiveInt(line.shipping_length_cm, DEFAULT_LENGTH_CM)
 
     weightG += productWeight * quantity
     heightCm += productHeight * quantity
