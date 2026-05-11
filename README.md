@@ -88,7 +88,10 @@ VITE_API_BASE_URL=http://localhost:4000/api
 
 ## Base de datos
 
-Ejecutar scripts en MySQL:
+El backend crea automaticamente la base y la tabla `products` al iniciar.
+Si `DB_AUTO_SEED=true`, tambien inserta productos demo cuando la tabla esta vacia.
+
+Si queres cargar manualmente scripts en MySQL:
 
 ```sql
 SOURCE backend/sql/schema.sql;

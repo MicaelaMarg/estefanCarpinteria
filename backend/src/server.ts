@@ -1,7 +1,7 @@
 import cors from 'cors'
 import express from 'express'
 import { env } from './config/env.js'
-import { pool } from './db/pool.js'
+import { initializeDatabase, pool } from './db/pool.js'
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js'
 import authRouter from './routes/auth.routes.js'
 import productsRouter from './routes/products.routes.js'
@@ -28,6 +28,15 @@ app.use('/api/auth', authRouter)
 app.use(notFoundHandler)
 app.use(errorHandler)
 
-app.listen(env.port, () => {
-  console.log(`Server running on port ${env.port}`)
+const bootstrap = async () => {
+  await initializeDatabase()
+
+  app.listen(env.port, () => {
+    console.log(`Server running on port ${env.port}`)
+  })
+}
+
+void bootstrap().catch((error) => {
+  console.error('[mysql] boot ping fallo', error)
+  process.exit(1)
 })
